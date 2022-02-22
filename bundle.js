@@ -8489,692 +8489,19 @@ System.register("clipper-js", [
 });
 const __exp = __instantiate("clipper-js");
 const __default = __exp["default"];
-const directives = new WeakMap();
-const directive = (f)=>(...args)=>{
-        const d = f(...args);
-        directives.set(d, true);
-        return d;
-    }
-;
-const isDirective = (o)=>{
-    return typeof o === "function" && directives.has(o);
+const pointConversion = (point)=>{
+    if (Array.isArray(point)) return {
+        x: point[0],
+        y: point[1]
+    };
+    else return point;
 };
-const isCEPolyfill = typeof window !== "undefined" && window.customElements != null && window.customElements.polyfillWrapFlushCallback !== void 0;
-const reparentNodes = (container, start, end = null, before = null)=>{
-    while(start !== end){
-        const n = start.nextSibling;
-        container.insertBefore(start, before);
-        start = n;
-    }
-};
-const removeNodes = (container, start, end = null)=>{
-    while(start !== end){
-        const n = start.nextSibling;
-        container.removeChild(start);
-        start = n;
-    }
-};
-const noChange = {
-};
-const nothing = {
-};
-const marker = `{{lit-${String(Math.random()).slice(2)}}}`;
-const nodeMarker = `<!--${marker}-->`;
-const markerRegex = new RegExp(`${marker}|${nodeMarker}`);
-const boundAttributeSuffix = "$lit$";
-class Template {
-    constructor(result, element5){
-        this.parts = [];
-        this.element = element5;
-        const nodesToRemove = [];
-        const stack = [];
-        const walker = document.createTreeWalker(element5.content, 133, null, false);
-        let lastPartIndex = 0;
-        let index3 = -1;
-        let partIndex = 0;
-        const { strings: strings5 , values: { length  }  } = result;
-        while(partIndex < length){
-            const node = walker.nextNode();
-            if (node === null) {
-                walker.currentNode = stack.pop();
-                continue;
-            }
-            index3++;
-            if (node.nodeType === 1) {
-                if (node.hasAttributes()) {
-                    const attributes = node.attributes;
-                    const { length: length2  } = attributes;
-                    let count = 0;
-                    for(let i = 0; i < length2; i++){
-                        if (endsWith(attributes[i].name, boundAttributeSuffix)) {
-                            count++;
-                        }
-                    }
-                    while((count--) > 0){
-                        const stringForPart = strings5[partIndex];
-                        const name = lastAttributeNameRegex.exec(stringForPart)[2];
-                        const attributeLookupName = name.toLowerCase() + boundAttributeSuffix;
-                        const attributeValue = node.getAttribute(attributeLookupName);
-                        node.removeAttribute(attributeLookupName);
-                        const statics = attributeValue.split(markerRegex);
-                        this.parts.push({
-                            type: "attribute",
-                            index: index3,
-                            name,
-                            strings: statics
-                        });
-                        partIndex += statics.length - 1;
-                    }
-                }
-                if (node.tagName === "TEMPLATE") {
-                    stack.push(node);
-                    walker.currentNode = node.content;
-                }
-            } else if (node.nodeType === 3) {
-                const data = node.data;
-                if (data.indexOf(marker) >= 0) {
-                    const parent = node.parentNode;
-                    const strings2 = data.split(markerRegex);
-                    const lastIndex = strings2.length - 1;
-                    for(let i = 0; i < lastIndex; i++){
-                        let insert;
-                        let s = strings2[i];
-                        if (s === "") {
-                            insert = createMarker();
-                        } else {
-                            const match = lastAttributeNameRegex.exec(s);
-                            if (match !== null && endsWith(match[2], boundAttributeSuffix)) {
-                                s = s.slice(0, match.index) + match[1] + match[2].slice(0, -boundAttributeSuffix.length) + match[3];
-                            }
-                            insert = document.createTextNode(s);
-                        }
-                        parent.insertBefore(insert, node);
-                        this.parts.push({
-                            type: "node",
-                            index: ++index3
-                        });
-                    }
-                    if (strings2[lastIndex] === "") {
-                        parent.insertBefore(createMarker(), node);
-                        nodesToRemove.push(node);
-                    } else {
-                        node.data = strings2[lastIndex];
-                    }
-                    partIndex += lastIndex;
-                }
-            } else if (node.nodeType === 8) {
-                if (node.data === marker) {
-                    const parent = node.parentNode;
-                    if (node.previousSibling === null || index3 === lastPartIndex) {
-                        index3++;
-                        parent.insertBefore(createMarker(), node);
-                    }
-                    lastPartIndex = index3;
-                    this.parts.push({
-                        type: "node",
-                        index: index3
-                    });
-                    if (node.nextSibling === null) {
-                        node.data = "";
-                    } else {
-                        nodesToRemove.push(node);
-                        index3--;
-                    }
-                    partIndex++;
-                } else {
-                    let i = -1;
-                    while((i = node.data.indexOf(marker, i + 1)) !== -1){
-                        this.parts.push({
-                            type: "node",
-                            index: -1
-                        });
-                        partIndex++;
-                    }
-                }
-            }
-        }
-        for (const n of nodesToRemove){
-            n.parentNode.removeChild(n);
-        }
-    }
+function copy(turtle) {
+    return new Turtle(JSON.parse(JSON.stringify({
+        angle: turtle.angle,
+        path: turtle.path
+    })));
 }
-const endsWith = (str, suffix)=>{
-    const index4 = str.length - suffix.length;
-    return index4 >= 0 && str.slice(index4) === suffix;
-};
-const isTemplatePartActive = (part)=>part.index !== -1
-;
-const createMarker = ()=>document.createComment("")
-;
-const lastAttributeNameRegex = /([ \x09\x0a\x0c\x0d])([^\0-\x1F\x7F-\x9F "'>=/]+)([ \x09\x0a\x0c\x0d]*=[ \x09\x0a\x0c\x0d]*(?:[^ \x09\x0a\x0c\x0d"'`<>=]*|"[^"]*|'[^']*))$/;
-class TemplateInstance {
-    constructor(template, processor, options2){
-        this.__parts = [];
-        this.template = template;
-        this.processor = processor;
-        this.options = options2;
-    }
-    update(values) {
-        let i = 0;
-        for (const part of this.__parts){
-            if (part !== void 0) {
-                part.setValue(values[i]);
-            }
-            i++;
-        }
-        for (const part1 of this.__parts){
-            if (part1 !== void 0) {
-                part1.commit();
-            }
-        }
-    }
-    _clone() {
-        const fragment = isCEPolyfill ? this.template.element.content.cloneNode(true) : document.importNode(this.template.element.content, true);
-        const stack1 = [];
-        const parts2 = this.template.parts;
-        const walker1 = document.createTreeWalker(fragment, 133, null, false);
-        let partIndex1 = 0;
-        let nodeIndex = 0;
-        let part;
-        let node = walker1.nextNode();
-        while(partIndex1 < parts2.length){
-            part = parts2[partIndex1];
-            if (!isTemplatePartActive(part)) {
-                this.__parts.push(void 0);
-                partIndex1++;
-                continue;
-            }
-            while(nodeIndex < part.index){
-                nodeIndex++;
-                if (node.nodeName === "TEMPLATE") {
-                    stack1.push(node);
-                    walker1.currentNode = node.content;
-                }
-                if ((node = walker1.nextNode()) === null) {
-                    walker1.currentNode = stack1.pop();
-                    node = walker1.nextNode();
-                }
-            }
-            if (part.type === "node") {
-                const part2 = this.processor.handleTextExpression(this.options);
-                part2.insertAfterNode(node.previousSibling);
-                this.__parts.push(part2);
-            } else {
-                this.__parts.push(...this.processor.handleAttributeExpressions(node, part.name, part.strings, this.options));
-            }
-            partIndex1++;
-        }
-        if (isCEPolyfill) {
-            document.adoptNode(fragment);
-            customElements.upgrade(fragment);
-        }
-        return fragment;
-    }
-}
-const policy = window.trustedTypes && trustedTypes.createPolicy("lit-html", {
-    createHTML: (s)=>s
-});
-const commentMarker = ` ${marker} `;
-class TemplateResult {
-    constructor(strings1, values, type1, processor1){
-        this.strings = strings1;
-        this.values = values;
-        this.type = type1;
-        this.processor = processor1;
-    }
-    getHTML() {
-        const l = this.strings.length - 1;
-        let html2 = "";
-        let isCommentBinding = false;
-        for(let i = 0; i < l; i++){
-            const s = this.strings[i];
-            const commentOpen = s.lastIndexOf("<!--");
-            isCommentBinding = (commentOpen > -1 || isCommentBinding) && s.indexOf("-->", commentOpen + 1) === -1;
-            const attributeMatch = lastAttributeNameRegex.exec(s);
-            if (attributeMatch === null) {
-                html2 += s + (isCommentBinding ? commentMarker : nodeMarker);
-            } else {
-                html2 += s.substr(0, attributeMatch.index) + attributeMatch[1] + attributeMatch[2] + boundAttributeSuffix + attributeMatch[3] + marker;
-            }
-        }
-        html2 += this.strings[l];
-        return html2;
-    }
-    getTemplateElement() {
-        const template1 = document.createElement("template");
-        let value = this.getHTML();
-        if (policy !== void 0) {
-            value = policy.createHTML(value);
-        }
-        template1.innerHTML = value;
-        return template1;
-    }
-}
-class SVGTemplateResult extends TemplateResult {
-    getHTML() {
-        return `<svg>${super.getHTML()}</svg>`;
-    }
-    getTemplateElement() {
-        const template1 = super.getTemplateElement();
-        const content = template1.content;
-        const svgElement = content.firstChild;
-        content.removeChild(svgElement);
-        reparentNodes(content, svgElement.firstChild);
-        return template1;
-    }
-}
-const isPrimitive = (value)=>{
-    return value === null || !(typeof value === "object" || typeof value === "function");
-};
-const isIterable = (value)=>{
-    return Array.isArray(value) || !!(value && value[Symbol.iterator]);
-};
-class AttributeCommitter {
-    constructor(element1, name3, strings2){
-        this.dirty = true;
-        this.element = element1;
-        this.name = name3;
-        this.strings = strings2;
-        this.parts = [];
-        for(let i1 = 0; i1 < strings2.length - 1; i1++){
-            this.parts[i1] = this._createPart();
-        }
-    }
-    _createPart() {
-        return new AttributePart(this);
-    }
-    _getValue() {
-        const strings3 = this.strings;
-        const l = strings3.length - 1;
-        const parts2 = this.parts;
-        if (l === 1 && strings3[0] === "" && strings3[1] === "") {
-            const v = parts2[0].value;
-            if (typeof v === "symbol") {
-                return String(v);
-            }
-            if (typeof v === "string" || !isIterable(v)) {
-                return v;
-            }
-        }
-        let text = "";
-        for(let i1 = 0; i1 < l; i1++){
-            text += strings3[i1];
-            const part = parts2[i1];
-            if (part !== void 0) {
-                const v = part.value;
-                if (isPrimitive(v) || !isIterable(v)) {
-                    text += typeof v === "string" ? v : String(v);
-                } else {
-                    for (const t of v){
-                        text += typeof t === "string" ? t : String(t);
-                    }
-                }
-            }
-        }
-        text += strings3[l];
-        return text;
-    }
-    commit() {
-        if (this.dirty) {
-            this.dirty = false;
-            this.element.setAttribute(this.name, this._getValue());
-        }
-    }
-}
-class AttributePart {
-    constructor(committer){
-        this.value = void 0;
-        this.committer = committer;
-    }
-    setValue(value) {
-        if (value !== noChange && (!isPrimitive(value) || value !== this.value)) {
-            this.value = value;
-            if (!isDirective(value)) {
-                this.committer.dirty = true;
-            }
-        }
-    }
-    commit() {
-        while(isDirective(this.value)){
-            const directive2 = this.value;
-            this.value = noChange;
-            directive2(this);
-        }
-        if (this.value === noChange) {
-            return;
-        }
-        this.committer.commit();
-    }
-}
-class NodePart {
-    constructor(options1){
-        this.value = void 0;
-        this.__pendingValue = void 0;
-        this.options = options1;
-    }
-    appendInto(container) {
-        this.startNode = container.appendChild(createMarker());
-        this.endNode = container.appendChild(createMarker());
-    }
-    insertAfterNode(ref) {
-        this.startNode = ref;
-        this.endNode = ref.nextSibling;
-    }
-    appendIntoPart(part) {
-        part.__insert(this.startNode = createMarker());
-        part.__insert(this.endNode = createMarker());
-    }
-    insertAfterPart(ref) {
-        ref.__insert(this.startNode = createMarker());
-        this.endNode = ref.endNode;
-        ref.endNode = this.startNode;
-    }
-    setValue(value) {
-        this.__pendingValue = value;
-    }
-    commit() {
-        if (this.startNode.parentNode === null) {
-            return;
-        }
-        while(isDirective(this.__pendingValue)){
-            const directive2 = this.__pendingValue;
-            this.__pendingValue = noChange;
-            directive2(this);
-        }
-        const value = this.__pendingValue;
-        if (value === noChange) {
-            return;
-        }
-        if (isPrimitive(value)) {
-            if (value !== this.value) {
-                this.__commitText(value);
-            }
-        } else if (value instanceof TemplateResult) {
-            this.__commitTemplateResult(value);
-        } else if (value instanceof Node) {
-            this.__commitNode(value);
-        } else if (isIterable(value)) {
-            this.__commitIterable(value);
-        } else if (value === nothing) {
-            this.value = nothing;
-            this.clear();
-        } else {
-            this.__commitText(value);
-        }
-    }
-    __insert(node) {
-        this.endNode.parentNode.insertBefore(node, this.endNode);
-    }
-    __commitNode(value) {
-        if (this.value === value) {
-            return;
-        }
-        this.clear();
-        this.__insert(value);
-        this.value = value;
-    }
-    __commitText(value) {
-        const node = this.startNode.nextSibling;
-        value = value == null ? "" : value;
-        const valueAsString = typeof value === "string" ? value : String(value);
-        if (node === this.endNode.previousSibling && node.nodeType === 3) {
-            node.data = valueAsString;
-        } else {
-            this.__commitNode(document.createTextNode(valueAsString));
-        }
-        this.value = value;
-    }
-    __commitTemplateResult(value) {
-        const template1 = this.options.templateFactory(value);
-        if (this.value instanceof TemplateInstance && this.value.template === template1) {
-            this.value.update(value.values);
-        } else {
-            const instance = new TemplateInstance(template1, value.processor, this.options);
-            const fragment = instance._clone();
-            instance.update(value.values);
-            this.__commitNode(fragment);
-            this.value = instance;
-        }
-    }
-    __commitIterable(value) {
-        if (!Array.isArray(this.value)) {
-            this.value = [];
-            this.clear();
-        }
-        const itemParts = this.value;
-        let partIndex1 = 0;
-        let itemPart;
-        for (const item of value){
-            itemPart = itemParts[partIndex1];
-            if (itemPart === void 0) {
-                itemPart = new NodePart(this.options);
-                itemParts.push(itemPart);
-                if (partIndex1 === 0) {
-                    itemPart.appendIntoPart(this);
-                } else {
-                    itemPart.insertAfterPart(itemParts[partIndex1 - 1]);
-                }
-            }
-            itemPart.setValue(item);
-            itemPart.commit();
-            partIndex1++;
-        }
-        if (partIndex1 < itemParts.length) {
-            itemParts.length = partIndex1;
-            this.clear(itemPart && itemPart.endNode);
-        }
-    }
-    clear(startNode = this.startNode) {
-        removeNodes(this.startNode.parentNode, startNode.nextSibling, this.endNode);
-    }
-}
-class BooleanAttributePart {
-    constructor(element2, name1, strings3){
-        this.value = void 0;
-        this.__pendingValue = void 0;
-        if (strings3.length !== 2 || strings3[0] !== "" || strings3[1] !== "") {
-            throw new Error("Boolean attributes can only contain a single expression");
-        }
-        this.element = element2;
-        this.name = name1;
-        this.strings = strings3;
-    }
-    setValue(value) {
-        this.__pendingValue = value;
-    }
-    commit() {
-        while(isDirective(this.__pendingValue)){
-            const directive2 = this.__pendingValue;
-            this.__pendingValue = noChange;
-            directive2(this);
-        }
-        if (this.__pendingValue === noChange) {
-            return;
-        }
-        const value = !!this.__pendingValue;
-        if (this.value !== value) {
-            if (value) {
-                this.element.setAttribute(this.name, "");
-            } else {
-                this.element.removeAttribute(this.name);
-            }
-            this.value = value;
-        }
-        this.__pendingValue = noChange;
-    }
-}
-class PropertyCommitter extends AttributeCommitter {
-    constructor(element3, name2, strings4){
-        super(element3, name2, strings4);
-        this.single = strings4.length === 2 && strings4[0] === "" && strings4[1] === "";
-    }
-    _createPart() {
-        return new PropertyPart(this);
-    }
-    _getValue() {
-        if (this.single) {
-            return this.parts[0].value;
-        }
-        return super._getValue();
-    }
-    commit() {
-        if (this.dirty) {
-            this.dirty = false;
-            this.element[this.name] = this._getValue();
-        }
-    }
-}
-class PropertyPart extends AttributePart {
-}
-let eventOptionsSupported = false;
-(()=>{
-    try {
-        const options2 = {
-            get capture () {
-                eventOptionsSupported = true;
-                return false;
-            }
-        };
-        window.addEventListener("test", options2, options2);
-        window.removeEventListener("test", options2, options2);
-    } catch (_e) {
-    }
-})();
-class EventPart {
-    constructor(element4, eventName, eventContext){
-        this.value = void 0;
-        this.__pendingValue = void 0;
-        this.element = element4;
-        this.eventName = eventName;
-        this.eventContext = eventContext;
-        this.__boundHandleEvent = (e)=>this.handleEvent(e)
-        ;
-    }
-    setValue(value) {
-        this.__pendingValue = value;
-    }
-    commit() {
-        while(isDirective(this.__pendingValue)){
-            const directive2 = this.__pendingValue;
-            this.__pendingValue = noChange;
-            directive2(this);
-        }
-        if (this.__pendingValue === noChange) {
-            return;
-        }
-        const newListener = this.__pendingValue;
-        const oldListener = this.value;
-        const shouldRemoveListener = newListener == null || oldListener != null && (newListener.capture !== oldListener.capture || newListener.once !== oldListener.once || newListener.passive !== oldListener.passive);
-        const shouldAddListener = newListener != null && (oldListener == null || shouldRemoveListener);
-        if (shouldRemoveListener) {
-            this.element.removeEventListener(this.eventName, this.__boundHandleEvent, this.__options);
-        }
-        if (shouldAddListener) {
-            this.__options = getOptions(newListener);
-            this.element.addEventListener(this.eventName, this.__boundHandleEvent, this.__options);
-        }
-        this.value = newListener;
-        this.__pendingValue = noChange;
-    }
-    handleEvent(event) {
-        if (typeof this.value === "function") {
-            this.value.call(this.eventContext || this.element, event);
-        } else {
-            this.value.handleEvent(event);
-        }
-    }
-}
-const getOptions = (o)=>o && (eventOptionsSupported ? {
-        capture: o.capture,
-        passive: o.passive,
-        once: o.once
-    } : o.capture)
-;
-class DefaultTemplateProcessor {
-    handleAttributeExpressions(element, name, strings, options) {
-        const prefix = name[0];
-        if (prefix === ".") {
-            const committer2 = new PropertyCommitter(element, name.slice(1), strings);
-            return committer2.parts;
-        }
-        if (prefix === "@") {
-            return [
-                new EventPart(element, name.slice(1), options.eventContext)
-            ];
-        }
-        if (prefix === "?") {
-            return [
-                new BooleanAttributePart(element, name.slice(1), strings)
-            ];
-        }
-        const committer1 = new AttributeCommitter(element, name, strings);
-        return committer1.parts;
-    }
-    handleTextExpression(options) {
-        return new NodePart(options);
-    }
-}
-const defaultTemplateProcessor = new DefaultTemplateProcessor();
-function templateFactory(result1) {
-    let templateCache = templateCaches.get(result1.type);
-    if (templateCache === void 0) {
-        templateCache = {
-            stringsArray: new WeakMap(),
-            keyString: new Map()
-        };
-        templateCaches.set(result1.type, templateCache);
-    }
-    let template1 = templateCache.stringsArray.get(result1.strings);
-    if (template1 !== void 0) {
-        return template1;
-    }
-    const key = result1.strings.join(marker);
-    template1 = templateCache.keyString.get(key);
-    if (template1 === void 0) {
-        template1 = new Template(result1, result1.getTemplateElement());
-        templateCache.keyString.set(key, template1);
-    }
-    templateCache.stringsArray.set(result1.strings, template1);
-    return template1;
-}
-const templateCaches = new Map();
-const parts = new WeakMap();
-const render = (result1, container, options3)=>{
-    let part = parts.get(container);
-    if (part === void 0) {
-        removeNodes(container, container.firstChild);
-        parts.set(container, part = new NodePart(Object.assign({
-            templateFactory
-        }, options3)));
-        part.appendInto(container);
-    }
-    part.setValue(result1);
-    part.commit();
-};
-if (typeof window !== "undefined") {
-    (window["litHtmlVersions"] || (window["litHtmlVersions"] = [])).push("1.3.0");
-}
-const html = (strings6, ...values1)=>new TemplateResult(strings6, values1, "html", defaultTemplateProcessor)
-;
-const svg = (strings6, ...values1)=>new SVGTemplateResult(strings6, values1, "svg", defaultTemplateProcessor)
-;
-const add = (x, y)=>{
-    if (typeof x !== typeof y) throw "Types of args to + don't match.";
-    if (Array.isArray(x) && Array.isArray(y)) return x.concat(y);
-    else return x + y;
-};
-const KEYWORDS = [
-    "if",
-    "elif",
-    "else",
-    "for",
-    "skip",
-    "break",
-    "import",
-    "as",
-    "def",
-    "dict"
-];
 function createPath() {
     return [
         {
@@ -9194,8 +8521,78 @@ function createPath() {
         }
     ];
 }
-function firstPath(turtle) {
-    return firstPathHelper(turtle.path);
+function move(point0, point1, turtle) {
+    const { x: x0 , y: y0  } = point0;
+    const { x: x1 , y: y1  } = point1;
+    turtle.translate(x1 - x0, y1 - y0);
+    return turtle;
+}
+function translate(x, y, turtle) {
+    turtle.path = turtle.pointMap((point)=>({
+            x: point.x + x,
+            y: point.y + y
+        })
+    );
+    return turtle;
+}
+function rotate(point, angle, turtle) {
+    turtle.path = turtle.pointMap((p)=>{
+        let delta = angle * 2 * Math.PI / 360;
+        let hereX = p.x - point.x;
+        let hereY = p.y - point.y;
+        let newPoint = {
+            x: hereX * Math.cos(delta) - hereY * Math.sin(delta) + point.x,
+            y: hereY * Math.cos(delta) + hereX * Math.sin(delta) + point.y
+        };
+        return newPoint;
+    });
+    turtle.angle = turtle.angle + angle;
+    return turtle;
+}
+function scale(xScale, yScale, turtle) {
+    if (!yScale) yScale = xScale;
+    let origin = turtle.start;
+    turtle.path = turtle.pointMap((p)=>{
+        let hereX = p.x;
+        let hereY = p.y;
+        let newPoint = {
+            x: hereX * xScale,
+            y: hereY * yScale
+        };
+        return newPoint;
+    });
+    turtle.alignHead();
+    return turtle;
+}
+function goTo(point, down, turtle) {
+    const end = turtle.end;
+    const { x , y  } = point;
+    turtle.addPoint({
+        x,
+        y
+    }, down);
+    turtle.angle = Math.atan2(end.y - y, end.x - x) * 180 / Math.PI + 180;
+    return turtle;
+}
+function setAngle(angle, turtle) {
+    turtle.angle = angle;
+    return turtle;
+}
+function reverse(turtle) {
+    turtle.path = turtle.path.map((x)=>({
+            ...x,
+            points: x.points.reverse()
+        })
+    );
+    turtle.alignHead();
+    return turtle;
+}
+const SCALE = 100;
+const SCALE1 = 100;
+function construction(turtle) {
+    turtle.pathMap((p)=>p.construction = true
+    );
+    return turtle;
 }
 function lastPath(turtle) {
     let last = turtle.path;
@@ -9204,11 +8601,25 @@ function lastPath(turtle) {
     }
     return last;
 }
-function pointsFromLast(i1, turtle) {
-    return turtle.lastPath().points.slice(-1 - i1)[0];
+function firstPath(turtle) {
+    return firstPathHelper(turtle.path);
 }
-function pointsFromFirst(i1, turtle) {
-    return turtle.firstPath().points[i1];
+function pointsFromLast(i, turtle) {
+    return turtle.lastPath().points.slice(-1 - i)[0];
+}
+function pointsFromFirst(i, turtle) {
+    return turtle.firstPath().points[i];
+}
+function flatten1(items) {
+    const flat = [];
+    items.forEach((item)=>{
+        if (Array.isArray(item)) {
+            flat.push(...flatten1(item));
+        } else {
+            flat.push(item);
+        }
+    });
+    return flat;
 }
 function addPoint(point, down, turtle) {
     const lastPath1 = turtle.lastPath();
@@ -9250,6 +8661,23 @@ function pointFilter(f, turtle) {
         })
     );
 }
+function lastAngle(turtle) {
+    let angle;
+    if (turtle.points.length > 1) {
+        let lastPoint = turtle.pointsFromLast(0);
+        let secondLastPoint = turtle.pointsFromLast(1);
+        let x = lastPoint.x - secondLastPoint.x;
+        let y = lastPoint.y - secondLastPoint.y;
+        angle = Math.atan2(y, x) * 180 / Math.PI;
+    } else {
+        angle = 0;
+    }
+    return angle;
+}
+function alignHead(turtle) {
+    turtle.angle = turtle.lastAngle();
+    return turtle;
+}
 function extrema(turtle) {
     let xMin = Number.POSITIVE_INFINITY;
     let xMax = Number.NEGATIVE_INFINITY;
@@ -9268,64 +8696,78 @@ function extrema(turtle) {
         yMax
     };
 }
-const SCALE = 100;
-function setBooleanForm(clippedPaths, turtle) {
-    let newPaths = Object.values(clippedPaths.paths).map((p)=>{
-        p = p.map(({ X , Y  })=>({
-                x: X / SCALE,
-                y: Y / SCALE
-            })
-        );
-        const points = [
-            ...p,
-            p[0]
-        ];
-        return {
-            points,
-            fillColor: "none",
-            strokeWidth: 1,
-            strokeColor: "black",
-            construction: false
-        };
-    });
-    turtle.path = newPaths;
+function width1(turtle) {
+    const { xMin , xMax  } = turtle.extrema();
+    return Math.abs(xMin - xMax);
+}
+function height1(turtle) {
+    const { yMin , yMax  } = turtle.extrema();
+    return Math.abs(yMin - yMax);
+}
+function fillColor(color, turtle) {
+    turtle.pathMap((p)=>p.fillColor = color
+    );
     return turtle;
 }
-const SCALE1 = 100;
-function flatten1(items) {
-    const flat = [];
-    items.forEach((item)=>{
-        if (Array.isArray(item)) {
-            flat.push(...flatten1(item));
-        } else {
-            flat.push(item);
-        }
-    });
-    return flat;
+function polygonArea(vertices) {
+    var area = 0;
+    for(var i = 0; i < vertices.length; i++){
+        let j = (i + 1) % vertices.length;
+        area += vertices[i].x * vertices[j].y;
+        area -= vertices[j].x * vertices[i].y;
+    }
+    return area / 2;
 }
-const pointAdjust = (p)=>{
-    const temp = {
-    };
-    temp["X"] = Math.round(p.x * SCALE1);
-    temp["Y"] = Math.round(p.y * SCALE1);
-    return temp;
-};
-function getBooleanForm(turtle) {
-    let [tool, ...body] = turtle.path.reverse();
-    tool = Array.isArray(tool) ? flatten1(tool) : [
-        tool
-    ];
-    body = Array.isArray(body) ? flatten1(body) : [
-        body
-    ];
-    tool = tool.map((p)=>p.points.map(pointAdjust)
+function strokeWidth(width1, turtle) {
+    turtle.pathMap((p)=>p.strokeWidth = width1
     );
-    body = body.map((p)=>p.points.map(pointAdjust)
+    return turtle;
+}
+function strokeColor(color, turtle) {
+    turtle.pathMap((p)=>p.strokeColor = color
     );
-    return body && tool ? [
-        body,
-        tool
-    ] : tool;
+    return turtle;
+}
+function strokeLinecap(type, turtle) {
+    const TYPES = [
+        "round",
+        "butt",
+        "square"
+    ];
+    if (!TYPES.includes(type)) throw "Unrecognized type: " + type;
+    turtle.pathMap((p)=>p.linecap = type
+    );
+    return turtle;
+}
+function strokeLinejoin(type, turtle) {
+    const TYPES = [
+        "round",
+        "mitre",
+        "bevel"
+    ];
+    if (!TYPES.includes(type)) throw "Unrecognized type: " + type;
+    turtle.pathMap((p)=>p.linejoin = type
+    );
+    return turtle;
+}
+function turn(turn1, turtle) {
+    const angle = turtle.angle + turn1 % 360;
+    turtle.angle = angle;
+    return turtle;
+}
+const degreesToRad = (deg)=>deg / 360 * 2 * Math.PI
+;
+function turnForward(turn1, distance, turtle) {
+    turtle.turn(turn1);
+    turtle.forward(distance);
+    return turtle;
+}
+function closePath(turtle) {
+    turtle.addPoint({
+        ...turtle.start
+    });
+    turtle.alignHead();
+    return turtle;
 }
 function point1(target, turtle) {
     if (target === "start") return turtle.pointsFromFirst(0);
@@ -9371,118 +8813,6 @@ function point1(target, turtle) {
     };
     else throw "\"" + target + "\"" + ` is not an origin point. "right" or "left" come first then "bottom" or "top"`;
 }
-function newStroke(start, type1, turtle) {
-    const { x , y  } = turtle.end;
-    if (Math.abs(start.x - x) < 0.00001 && Math.abs(start.y - y) < 0.00001) return turtle;
-    const ps = turtle.points;
-    if (ps.length === 1) {
-        turtle.lastPath().points[0] = start;
-    } else {
-        turtle.path.push({
-            points: [
-                start
-            ],
-            fillColor: "none",
-            strokeWidth: 1,
-            strokeColor: "black",
-            construction: false,
-            linecap: "butt",
-            linejoin: "mitre"
-        });
-        turtle.angle = 0;
-    }
-    return turtle;
-}
-function construction(turtle) {
-    turtle.pathMap((p)=>p.construction = true
-    );
-    return turtle;
-}
-function lastAngle(turtle) {
-    let angle;
-    if (turtle.points.length > 1) {
-        let lastPoint = turtle.pointsFromLast(0);
-        let secondLastPoint = turtle.pointsFromLast(1);
-        let x = lastPoint.x - secondLastPoint.x;
-        let y = lastPoint.y - secondLastPoint.y;
-        angle = Math.atan2(y, x) * 180 / Math.PI;
-    } else {
-        angle = 0;
-    }
-    return angle;
-}
-function alignHead(turtle) {
-    turtle.angle = turtle.lastAngle();
-    return turtle;
-}
-function fillColor(color, turtle) {
-    turtle.pathMap((p)=>p.fillColor = color
-    );
-    return turtle;
-}
-function strokeWidth(width, turtle) {
-    turtle.pathMap((p)=>p.strokeWidth = width
-    );
-    return turtle;
-}
-function strokeColor(color, turtle) {
-    turtle.pathMap((p)=>p.strokeColor = color
-    );
-    return turtle;
-}
-function strokeLinecap(type1, turtle) {
-    const TYPES = [
-        "round",
-        "butt",
-        "square"
-    ];
-    if (!TYPES.includes(type1)) throw "Unrecognized type: " + type1;
-    turtle.pathMap((p)=>p.linecap = type1
-    );
-    return turtle;
-}
-function strokeLinejoin(type1, turtle) {
-    const TYPES = [
-        "round",
-        "mitre",
-        "bevel"
-    ];
-    if (!TYPES.includes(type1)) throw "Unrecognized type: " + type1;
-    turtle.pathMap((p)=>p.linejoin = type1
-    );
-    return turtle;
-}
-function turn(turn1, turtle) {
-    const angle = turtle.angle + turn1 % 360;
-    turtle.angle = angle;
-    return turtle;
-}
-function goTo(point1, down, turtle) {
-    const end = turtle.end;
-    const { x , y  } = point1;
-    turtle.addPoint({
-        x,
-        y
-    }, down);
-    turtle.angle = Math.atan2(end.y - y, end.x - x) * 180 / Math.PI + 180;
-    return turtle;
-}
-const degreesToRad = (deg)=>deg / 360 * 2 * Math.PI
-;
-function forward(distance, down, turtle) {
-    if (distance === 0) return turtle;
-    const lastPoint = turtle.end;
-    const angle = turtle.angle;
-    const xCos = Math.cos(degreesToRad(angle));
-    const ySin = Math.sin(degreesToRad(angle));
-    const x = lastPoint.x + distance * xCos;
-    const y = lastPoint.y + distance * ySin;
-    turtle.addPoint({
-        x,
-        y
-    }, down);
-    return turtle;
-}
 function arc(angle, radius, down, turtle) {
     const chord = (r, theta)=>2 * r * Math.sin(theta * Math.PI / 360)
     ;
@@ -9513,90 +8843,6 @@ function arc(angle, radius, down, turtle) {
     turtle.setAngle(angle + ogAngle);
     return turtle;
 }
-function turnForward(turn1, distance, turtle) {
-    turtle.turn(turn1);
-    turtle.forward(distance);
-    return turtle;
-}
-function vec(x, y, down, turtle) {
-    if (x === 0 && y === 0) return turtle;
-    const { x: lx , y: ly  } = turtle.end;
-    turtle.addPoint({
-        x: lx + x,
-        y: ly + y
-    }, down);
-    turtle.angle = Math.atan2(y, x) * 180 / Math.PI;
-    return turtle;
-}
-function closePath(turtle) {
-    turtle.addPoint({
-        ...turtle.start
-    });
-    turtle.alignHead();
-    return turtle;
-}
-function move(point0, point1, turtle) {
-    const { x: x0 , y: y0  } = point0;
-    const { x: x1 , y: y1  } = point1;
-    turtle.translate(x1 - x0, y1 - y0);
-    return turtle;
-}
-function translate(x, y, turtle) {
-    turtle.path = turtle.pointMap((point1)=>({
-            x: point1.x + x,
-            y: point1.y + y
-        })
-    );
-    return turtle;
-}
-function rotate(point1, angle, turtle) {
-    turtle.path = turtle.pointMap((p)=>{
-        let delta = angle * 2 * Math.PI / 360;
-        let hereX = p.x - point1.x;
-        let hereY = p.y - point1.y;
-        let newPoint = {
-            x: hereX * Math.cos(delta) - hereY * Math.sin(delta) + point1.x,
-            y: hereY * Math.cos(delta) + hereX * Math.sin(delta) + point1.y
-        };
-        return newPoint;
-    });
-    turtle.angle = turtle.angle + angle;
-    return turtle;
-}
-function scale(xScale, yScale, turtle) {
-    if (!yScale) yScale = xScale;
-    let origin = turtle.start;
-    turtle.path = turtle.pointMap((p)=>{
-        let hereX = p.x;
-        let hereY = p.y;
-        let newPoint = {
-            x: hereX * xScale,
-            y: hereY * yScale
-        };
-        return newPoint;
-    });
-    turtle.alignHead();
-    return turtle;
-}
-function originate(turtle) {
-    return turtle.move(turtle.cc, {
-        x: 0,
-        y: 0
-    });
-}
-function setAngle(angle, turtle) {
-    turtle.angle = angle;
-    return turtle;
-}
-function reverse(turtle) {
-    turtle.path = turtle.path.map((x)=>({
-            ...x,
-            points: x.points.reverse()
-        })
-    );
-    turtle.alignHead();
-    return turtle;
-}
 function flip(direction, turtle) {
     const center = turtle.point("cc");
     let xDist, yDist;
@@ -9618,13 +8864,13 @@ function repeat(num, turtle) {
     let start = ogTurtle.start;
     let startAngle = turtle.angle;
     let newTurtle, end;
-    for(let i1 = 0; i1 < num; i1++){
+    for(let i = 0; i < num; i++){
         newTurtle = ogTurtle.copy();
         end = turtle.end;
         newTurtle.translate(end.x - start.x, end.y - start.y);
-        newTurtle.rotate(newTurtle.point("start"), startAngle * (i1 + 1));
-        newTurtle.points.forEach((p, i2)=>{
-            if (i2 !== 0) turtle.addPoint(p);
+        newTurtle.rotate(newTurtle.point("start"), startAngle * (i + 1));
+        newTurtle.points.forEach((p, i1)=>{
+            if (i1 !== 0) turtle.addPoint(p);
         });
     }
     turtle.angle = startAngle * (num + 1);
@@ -9640,14 +8886,336 @@ function mirror(turtle) {
         y
     });
     newTurtle.rotate(newTurtle.point("start"), turtle.angle * 2);
-    newTurtle.points.forEach((p, i1)=>{
-        if (i1 > 0) turtle.addPoint(p);
+    newTurtle.points.forEach((p, i)=>{
+        if (i > 0) turtle.addPoint(p);
     });
     turtle.alignHead();
     return turtle;
 }
 const getDistance = (p1, p2)=>Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
 ;
+function flatGoTo(point1, axis, turtle) {
+    const { x , y  } = point1;
+    const angle = turtle.angle;
+    const end = turtle.end;
+    const m = Math.tan(angle * Math.PI / 180);
+    const b = end.y - m * end.x;
+    if (axis === "x") {
+        const nextX = (y - b) / m;
+        turtle.goTo({
+            x: nextX,
+            y
+        });
+    } else if (axis === "y") {
+        const nextY = m * x + b;
+        turtle.goTo({
+            x,
+            y: nextY
+        });
+    }
+    turtle.goTo({
+        x,
+        y
+    });
+    return turtle;
+}
+function originate(turtle) {
+    return turtle.move(turtle.cc, {
+        x: 0,
+        y: 0
+    });
+}
+function union(turtle, args) {
+    turtle = args.length > 0 ? group(turtle, group(...args)) : turtle;
+    const [subjectPaths, clipPaths] = turtle.getBooleanForm();
+    if (clipPaths === undefined || subjectPaths === undefined) return turtle;
+    const subject = new __default(subjectPaths, true);
+    const clip = new __default(clipPaths, true);
+    const result = subject.union(clip);
+    turtle.setBooleanForm(result);
+    return turtle;
+}
+function difference(turtle, args) {
+    turtle = args.length > 0 ? group(turtle, group(...args)) : turtle;
+    const [subjectPaths, clipPaths] = turtle.getBooleanForm();
+    if (clipPaths === undefined || subjectPaths === undefined) return turtle;
+    const subject = new __default(subjectPaths, true);
+    const clip = new __default(clipPaths, true);
+    const result = subject.difference(clip);
+    turtle.setBooleanForm(result);
+    return turtle;
+}
+function intersect(turtle, args) {
+    turtle = args.length > 0 ? group(turtle, group(...args)) : turtle;
+    const [subjectPaths, clipPaths] = turtle.getBooleanForm();
+    if (clipPaths === undefined || subjectPaths === undefined) return turtle;
+    const subject = new __default(subjectPaths, true);
+    const clip = new __default(clipPaths, true);
+    const result = subject.intersect(clip);
+    turtle.setBooleanForm(result);
+    return turtle;
+}
+function xor(turtle) {
+    const [subjectPaths, clipPaths] = turtle.getBooleanForm();
+    if (clipPaths === undefined || subjectPaths === undefined) return turtle;
+    const subject = new __default(subjectPaths, true);
+    const clip = new __default(clipPaths, true);
+    const result = subject.xor(clip);
+    turtle.setBooleanForm(result);
+    return turtle;
+}
+const overlap = (p0, p1)=>0.00000001 > Math.abs(p0.x - p1.x) + Math.abs(p0.y - p1.y)
+;
+function copyPaste(num, transformations, turtle) {
+    let newTurtles = [];
+    let lastTurtle = turtle.copy();
+    let angle;
+    for(let i = 0; i < num; i++){
+        transformations(lastTurtle);
+        newTurtles.push(lastTurtle);
+        lastTurtle = lastTurtle.copy();
+        angle = lastTurtle.angle;
+    }
+    let path4 = [
+        ...turtle.path
+    ];
+    for (const newTurtle of newTurtles){
+        path4 = [
+            ...path4,
+            ...newTurtle.path
+        ];
+    }
+    turtle.path = path4;
+    turtle.angle = angle;
+    return turtle;
+}
+function newStroke(start, type, turtle) {
+    const { x , y  } = turtle.end;
+    if (Math.abs(start.x - x) < 0.00001 && Math.abs(start.y - y) < 0.00001) return turtle;
+    const ps = turtle.points;
+    if (ps.length === 1) {
+        turtle.lastPath().points[0] = start;
+    } else {
+        turtle.path.push({
+            points: [
+                start
+            ],
+            fillColor: "none",
+            strokeWidth: 1,
+            strokeColor: "black",
+            construction: false,
+            linecap: "butt",
+            linejoin: "mitre"
+        });
+        turtle.angle = 0;
+    }
+    return turtle;
+}
+function getSqDist(p1, p2) {
+    var dx = p1[0] - p2[0], dy = p1[1] - p2[1];
+    return dx * dx + dy * dy;
+}
+const getDistance1 = (p1, p2)=>Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
+;
+function placeAlong(turtle, ogTurtle) {
+    const fp = turtle.start;
+    const lp = turtle.end;
+    const newTurtles = turtle.points.reduce((acc, cur, i)=>{
+        const newTurtle = ogTurtle.copy().move(ogTurtle.cc, cur);
+        return acc.concat(newTurtle);
+    }, []);
+    const grouped = group(...newTurtles);
+    ogTurtle.path = grouped.path;
+    return ogTurtle;
+}
+function trim(start, end, turtle) {
+    const newTurtle = new Turtle();
+    let count = 0;
+    turtle.pathMap((path4)=>{
+        let started = false;
+        path4.points.forEach((p)=>{
+            if (count >= start && count <= end) {
+                if (!started) {
+                    newTurtle.newStroke(p);
+                    started = true;
+                } else {
+                    newTurtle.addPoint(p);
+                }
+            }
+            count++;
+        });
+    });
+    turtle.path = newTurtle.path;
+    turtle.alignHead();
+    return turtle;
+}
+function dashed(num, turtle) {
+    turtle.pathMap((p)=>p.dashed = num
+    );
+    return turtle;
+}
+function centroid(turtle) {
+    const pts = turtle.points;
+    if (pts.length === 1) return pts[0];
+    else if (pts.length === 2) return {
+        x: (pts[0].x + pts[1].x) / 2,
+        y: (pts[0].y + pts[1].y) / 2
+    };
+    var first = pts[0], last = pts[pts.length - 1];
+    if (first.x != last.x || first.y != last.y) pts.push(first);
+    var twicearea = 0, x = 0, y = 0, nPts = pts.length, p1, p2, f;
+    for(var i = 0, j = nPts - 1; i < nPts; j = i++){
+        p1 = pts[i];
+        p2 = pts[j];
+        f = p1.x * p2.y - p2.x * p1.y;
+        twicearea += f;
+        x += (p1.x + p2.x) * f;
+        y += (p1.y + p2.y) * f;
+    }
+    f = twicearea * 3;
+    return {
+        x: x / f,
+        y: y / f
+    };
+}
+function vec(x, y, down, turtle) {
+    if (x === 0 && y === 0) return turtle;
+    const { x: lx , y: ly  } = turtle.end;
+    turtle.addPoint({
+        x: lx + x,
+        y: ly + y
+    }, down);
+    turtle.angle = Math.atan2(y, x) * 180 / Math.PI;
+    return turtle;
+}
+function bezier(string, turtle) {
+    const polylines = flattenPath(string).map((x)=>x.points
+    );
+    polylines.forEach((pl)=>{
+        pl.forEach((point1, i)=>i === 0 ? turtle.newStroke(point1) : turtle.goTo(point1)
+        );
+    });
+    return turtle;
+}
+function slide(angle, distance, turtle) {
+    turtle.path = turtle.pointMap((point1)=>({
+            x: point1.x + distance * Math.cos(angle / 180 * Math.PI),
+            y: point1.y + distance * Math.sin(angle / 180 * Math.PI)
+        })
+    );
+    return turtle;
+}
+const round = (num, prec = 0)=>prec === 0 ? num : Math.round(num * prec) / prec
+;
+function lSystem({ axiom , rules , instructions , steps , max ,  }, turtle) {
+    let state = typeof axiom === "string" ? axiom.split("") : axiom;
+    for(let i = 0; i < steps; i++){
+        let newState = [];
+        state.forEach((symbol)=>{
+            let replacement = rules[symbol] ?? [
+                symbol
+            ];
+            if (typeof replacement === "string") replacement = replacement.split("");
+            newState.push(...replacement);
+        });
+        state = newState;
+    }
+    const t = turtle;
+    t.l_system_tape = state;
+    state.forEach((c, i1)=>{
+        if ((max === undefined || i1 < max) && instructions[c]) return instructions[c](t);
+    });
+    return t;
+}
+function group() {
+    const turtles = arguments;
+    let path4 = [];
+    for (const turtle of turtles){
+        if (turtle.points.length === 1) continue;
+        path4 = turtle.path.length === 1 ? [
+            ...path4,
+            ...turtle.path
+        ] : [
+            ...path4,
+            turtle.path
+        ];
+    }
+    const __final = new Turtle();
+    if (path4.length > 0) __final.path = path4;
+    __final.angle = turtles[turtles.length - 1].angle;
+    return __final;
+}
+function setBooleanForm(clippedPaths, turtle) {
+    let newPaths = Object.values(clippedPaths.paths).map((p)=>{
+        p = p.map(({ X , Y  })=>({
+                x: X / SCALE,
+                y: Y / SCALE
+            })
+        );
+        const points = [
+            ...p,
+            p[0]
+        ];
+        return {
+            points,
+            fillColor: "none",
+            strokeWidth: 1,
+            strokeColor: "black",
+            construction: false
+        };
+    });
+    turtle.path = newPaths;
+    return turtle;
+}
+function flatten2(items) {
+    const flat = [];
+    items.forEach((item)=>{
+        if (Array.isArray(item)) {
+            flat.push(...flatten2(item));
+        } else {
+            flat.push(item);
+        }
+    });
+    return flat;
+}
+const pointAdjust = (p)=>{
+    const temp = {
+    };
+    temp["X"] = Math.round(p.x * SCALE1);
+    temp["Y"] = Math.round(p.y * SCALE1);
+    return temp;
+};
+function getBooleanForm(turtle) {
+    let [tool, ...body] = turtle.path.reverse();
+    tool = Array.isArray(tool) ? flatten2(tool) : [
+        tool
+    ];
+    body = Array.isArray(body) ? flatten2(body) : [
+        body
+    ];
+    tool = tool.map((p)=>p.points.map(pointAdjust)
+    );
+    body = body.map((p)=>p.points.map(pointAdjust)
+    );
+    return body && tool ? [
+        body,
+        tool
+    ] : tool;
+}
+function forward(distance, down, turtle) {
+    if (distance === 0) return turtle;
+    const lastPoint = turtle.end;
+    const angle = turtle.angle;
+    const xCos = Math.cos(degreesToRad(angle));
+    const ySin = Math.sin(degreesToRad(angle));
+    const x = lastPoint.x + distance * xCos;
+    const y = lastPoint.y + distance * ySin;
+    turtle.addPoint({
+        x,
+        y
+    }, down);
+    return turtle;
+}
 const getAngle = (p1, p2)=>180 / Math.PI * Math.atan2(p2.y - p1.y, p2.x - p1.x)
 ;
 const getIntraDist = (turtle, i0, i1)=>getDistance(turtle.pointsFromLast(i0), turtle.pointsFromLast(i1))
@@ -9687,56 +9255,6 @@ function fillet(radius, turtle) {
     turtle.forward(dist1 - lose);
     return turtle;
 }
-function flatGoTo(point1, axis, turtle) {
-    const { x , y  } = point1;
-    const angle = turtle.angle;
-    const end = turtle.end;
-    const m = Math.tan(angle * Math.PI / 180);
-    const b = end.y - m * end.x;
-    if (axis === "x") {
-        const nextX = (y - b) / m;
-        turtle.goTo({
-            x: nextX,
-            y
-        });
-    } else if (axis === "y") {
-        const nextY = m * x + b;
-        turtle.goTo({
-            x,
-            y: nextY
-        });
-    }
-    turtle.goTo({
-        x,
-        y
-    });
-    return turtle;
-}
-function copyPaste(num, transformations, turtle) {
-    let newTurtles = [];
-    let lastTurtle = turtle.copy();
-    let angle;
-    for(let i1 = 0; i1 < num; i1++){
-        transformations(lastTurtle);
-        newTurtles.push(lastTurtle);
-        lastTurtle = lastTurtle.copy();
-        angle = lastTurtle.angle;
-    }
-    let path4 = [
-        ...turtle.path
-    ];
-    for (const newTurtle of newTurtles){
-        path4 = [
-            ...path4,
-            ...newTurtle.path
-        ];
-    }
-    turtle.path = path4;
-    turtle.angle = angle;
-    return turtle;
-}
-const overlap = (p0, p1)=>0.00000001 > Math.abs(p0.x - p1.x) + Math.abs(p0.y - p1.y)
-;
 function offset1(distance, ops, turtle) {
     let { endType , jointType ="jtRound" , miterLimit =2 , roundPrecision =0.25  } = ops;
     if (!endType) {
@@ -9745,27 +9263,14 @@ function offset1(distance, ops, turtle) {
     }
     const paths = turtle.getBooleanForm().flat();
     const subject = new __default(paths, true);
-    const result1 = subject.offset(distance * 100, {
+    const result = subject.offset(distance * 100, {
         jointType,
         endType,
         miterLimit,
         roundPrecision
     });
-    turtle.setBooleanForm(result1);
+    turtle.setBooleanForm(result);
     return turtle;
-}
-function xor(turtle) {
-    const [subjectPaths, clipPaths] = turtle.getBooleanForm();
-    if (clipPaths === undefined || subjectPaths === undefined) return turtle;
-    const subject = new __default(subjectPaths, true);
-    const clip = new __default(clipPaths, true);
-    const result1 = subject.xor(clip);
-    turtle.setBooleanForm(result1);
-    return turtle;
-}
-function getSqDist(p1, p2) {
-    var dx = p1[0] - p2[0], dy = p1[1] - p2[1];
-    return dx * dx + dy * dy;
 }
 function getSqSegDist(p, p1, p2) {
     var x = p1[0], y = p1[1], dx = p2[0] - x, dy = p2[1] - y;
@@ -9787,8 +9292,8 @@ function simplifyRadialDist(points, sqTolerance) {
     var prevPoint = points[0], newPoints = [
         prevPoint
     ], point1;
-    for(var i1 = 1, len = points.length; i1 < len; i1++){
-        point1 = points[i1];
+    for(var i = 1, len = points.length; i < len; i++){
+        point1 = points[i];
         if (getSqDist(point1, prevPoint) > sqTolerance) {
             newPoints.push(point1);
             prevPoint = point1;
@@ -9798,18 +9303,18 @@ function simplifyRadialDist(points, sqTolerance) {
     return newPoints;
 }
 function simplifyDPStep(points, first, last, sqTolerance, simplified) {
-    var maxSqDist = sqTolerance, index4;
-    for(var i1 = first + 1; i1 < last; i1++){
-        var sqDist = getSqSegDist(points[i1], points[first], points[last]);
+    var maxSqDist = sqTolerance, index3;
+    for(var i = first + 1; i < last; i++){
+        var sqDist = getSqSegDist(points[i], points[first], points[last]);
         if (sqDist > maxSqDist) {
-            index4 = i1;
+            index3 = i;
             maxSqDist = sqDist;
         }
     }
     if (maxSqDist > sqTolerance) {
-        if (index4 - first > 1) simplifyDPStep(points, first, index4, sqTolerance, simplified);
-        simplified.push(points[index4]);
-        if (last - index4 > 1) simplifyDPStep(points, index4, last, sqTolerance, simplified);
+        if (index3 - first > 1) simplifyDPStep(points, first, index3, sqTolerance, simplified);
+        simplified.push(points[index3]);
+        if (last - index3 > 1) simplifyDPStep(points, index3, last, sqTolerance, simplified);
     }
 }
 function simplifyDouglasPeucker(points, sqTolerance) {
@@ -10185,43 +9690,19 @@ function text1(string, turtle) {
     const polylines = cache[string] || textToPolylines(string);
     cache[string] = polylines;
     polylines.forEach((pl)=>{
-        pl.forEach((point1, i1)=>{
-            if (i1 === 0) turtle.newStroke(point1);
+        pl.forEach((point1, i)=>{
+            if (i === 0) turtle.newStroke(point1);
             turtle.goTo(point1);
         });
     });
     turtle.flip("x");
     return turtle;
 }
-function dashed(num, turtle) {
-    turtle.pathMap((p)=>p.dashed = num
-    );
-    return turtle;
-}
-function bezier(string, turtle) {
-    const polylines = flattenPath(string).map((x)=>x.points
-    );
-    polylines.forEach((pl)=>{
-        pl.forEach((point1, i1)=>i1 === 0 ? turtle.newStroke(point1) : turtle.goTo(point1)
-        );
-    });
-    return turtle;
-}
-function slide(angle, distance, turtle) {
-    turtle.path = turtle.pointMap((point1)=>({
-            x: point1.x + distance * Math.cos(angle / 180 * Math.PI),
-            y: point1.y + distance * Math.sin(angle / 180 * Math.PI)
-        })
-    );
-    return turtle;
-}
-const round = (num, prec = 0)=>prec === 0 ? num : Math.round(num * prec) / prec
-;
-function flatten2(items) {
+function flatten3(items) {
     const flat = [];
     items.forEach((item)=>{
         if (Array.isArray(item)) {
-            flat.push(...flatten2(item));
+            flat.push(...flatten3(item));
         } else {
             flat.push(item);
         }
@@ -10242,7 +9723,7 @@ function polylines(asArray, prec, turtle) {
             )
         })
     ;
-    let pls = flatten2(turtle.path).map(roundPathPts);
+    let pls = flatten3(turtle.path).map(roundPathPts);
     return pls;
 }
 function crossProduct(a, b) {
@@ -10314,9 +9795,9 @@ function getMidpoint(p0, p1) {
 function ptContained(pt, pts) {
     let numPoints = pts.length;
     let intersections = 0;
-    for(let i1 = 0, j = 1; j < numPoints; j++, i1++){
+    for(let i = 0, j = 1; j < numPoints; j++, i++){
         let seg = [
-            pts[i1],
+            pts[i],
             pts[j]
         ];
         let ray = [
@@ -10343,11 +9824,11 @@ function ptsAreRight(p0, p1, p2) {
 }
 function getTabsPls(pls) {
     let tabs = [];
-    for(let i1 = 0; i1 < pls.length; i1++){
-        let pl = pls[i1];
-        const n1 = pl.pts.length;
-        for(let i2 = 0; i2 < n1 - 2; i2++){
-            const [p0, p1, p2] = pl.pts.slice(i2);
+    for(let i = 0; i < pls.length; i++){
+        let pl = pls[i];
+        const n = pl.pts.length;
+        for(let i1 = 0; i1 < n - 2; i1++){
+            const [p0, p1, p2] = pl.pts.slice(i1);
             const { isRight , midPt  } = ptsAreRight(p0, p1, p2);
             if (isRight) {
                 let contained = ptContained(midPt, pl.pts);
@@ -10364,12 +9845,12 @@ function getTabsPls(pls) {
                 if (fivePts) {
                     const [p01, p11, p21, p3] = pl.pts;
                     let isRect = isRectangle(p01, p11, p21, p3);
-                    if (isRect) i2 += 1;
+                    if (isRect) i1 += 1;
                 }
             }
-            if (i2 === n1 - 3) {
+            if (i1 === n - 3) {
                 const p21 = pl.pts[1];
-                const [p01, p11] = pl.pts.slice(i2 + 1);
+                const [p01, p11] = pl.pts.slice(i1 + 1);
                 const { isRight: isRight1 , midPt: midPt1  } = ptsAreRight(p01, p11, p21);
                 if (true) {
                     let contained = ptContained(midPt1, pl.pts);
@@ -10387,16 +9868,16 @@ function getTabsPls(pls) {
                     if (fivePts) {
                         const [p02, p12, p22, p3] = pl.pts;
                         let isRect = isRectangle(p02, p12, p22, p3);
-                        if (isRect) i2 += 1;
+                        if (isRect) i1 += 1;
                     }
                 }
             }
         }
     }
     const fusedTabs = [];
-    for(let i2 = 0; i2 < tabs.length; i2++){
-        let tab0 = tabs[i2];
-        for(let j = i2 + 1; j < tabs.length; j++){
+    for(let i1 = 0; i1 < tabs.length; i1++){
+        let tab0 = tabs[i1];
+        for(let j = i1 + 1; j < tabs.length; j++){
             let tab1 = tabs[j];
             if (samePt(tab0.midPt, tab1.midPt)) {
                 tab0.pts.push(tab1.pts[2]);
@@ -10412,100 +9893,21 @@ function getTabsPls(pls) {
 function getTabs(turtle) {
     return getTabsPls(turtle.copy().polylines());
 }
-function lSystem({ axiom , rules , instructions , steps , max ,  }, turtle) {
-    let state = typeof axiom === "string" ? axiom.split("") : axiom;
-    for(let i1 = 0; i1 < steps; i1++){
-        let newState = [];
-        state.forEach((symbol)=>{
-            let replacement = rules[symbol] ?? [
-                symbol
-            ];
-            if (typeof replacement === "string") replacement = replacement.split("");
-            newState.push(...replacement);
-        });
-        state = newState;
-    }
-    const t = turtle;
-    t.l_system_tape = state;
-    state.forEach((c, i2)=>{
-        if ((max === undefined || i2 < max) && instructions[c]) return instructions[c](t);
-    });
-    return t;
-}
-function centroid(turtle) {
-    const pts = turtle.points;
-    if (pts.length === 1) return pts[0];
-    else if (pts.length === 2) return {
-        x: (pts[0].x + pts[1].x) / 2,
-        y: (pts[0].y + pts[1].y) / 2
-    };
-    var first = pts[0], last = pts[pts.length - 1];
-    if (first.x != last.x || first.y != last.y) pts.push(first);
-    var twicearea = 0, x = 0, y = 0, nPts = pts.length, p1, p2, f;
-    for(var i1 = 0, j = nPts - 1; i1 < nPts; j = i1++){
-        p1 = pts[i1];
-        p2 = pts[j];
-        f = p1.x * p2.y - p2.x * p1.y;
-        twicearea += f;
-        x += (p1.x + p2.x) * f;
-        y += (p1.y + p2.y) * f;
-    }
-    f = twicearea * 3;
-    return {
-        x: x / f,
-        y: y / f
-    };
-}
-function width1(turtle) {
-    const { xMin , xMax  } = turtle.extrema();
-    return Math.abs(xMin - xMax);
-}
-function height1(turtle) {
-    const { yMin , yMax  } = turtle.extrema();
-    return Math.abs(yMin - yMax);
-}
-function flatten3(items) {
-    const flat = [];
-    items.forEach((item)=>{
-        if (Array.isArray(item)) {
-            flat.push(...flatten3(item));
-        } else {
-            flat.push(item);
-        }
-    });
-    return flat;
-}
 function points(turtle) {
-    return flatten3(turtle.pathMap((x)=>x.points
+    return flatten1(turtle.pathMap((x)=>x.points
     ));
-}
-function polygonArea(vertices) {
-    var area = 0;
-    for(var i1 = 0; i1 < vertices.length; i1++){
-        let j = (i1 + 1) % vertices.length;
-        area += vertices[i1].x * vertices[j].y;
-        area -= vertices[j].x * vertices[i1].y;
-    }
-    return area / 2;
 }
 const clockwise = (ps)=>polygonArea(ps) > 0
 ;
 function floodFill(color, turtle) {
     turtle.xor();
-    turtle.pathMap((p, i1)=>{
+    turtle.pathMap((p, i)=>{
         let cw = clockwise(p.points);
         if (cw) p.fillColor = color;
         else p.fillColor = "white";
     });
     return turtle;
 }
-const pointConversion = (point1)=>{
-    if (Array.isArray(point1)) return {
-        x: point1[0],
-        y: point1[1]
-    };
-    else return point1;
-};
 class Turtle {
     constructor(init){
         this.angle = 0;
@@ -10775,24 +10177,896 @@ class Turtle {
         return floodFill(color, this);
     }
 }
-function group() {
-    const turtles = arguments;
-    let path4 = [];
-    for (const turtle of turtles){
-        if (turtle.points.length === 1) continue;
-        path4 = turtle.path.length === 1 ? [
-            ...path4,
-            ...turtle.path
-        ] : [
-            ...path4,
-            turtle.path
-        ];
-    }
-    const __final = new Turtle();
-    if (path4.length > 0) __final.path = path4;
-    __final.angle = turtles[turtles.length - 1].angle;
-    return __final;
+function firstPathHelper(path4) {
+    const first = path4[0];
+    return Array.isArray(first) ? firstPathHelper(first) : first;
 }
+function pathMapHelper(path4, f) {
+    return Array.isArray(path4) ? path4.map((p)=>pathMapHelper(p, f)
+    ) : f(path4);
+}
+const getIntraDist2 = (path4, i0, i1)=>getDistance(path4[i0], path4[i1])
+;
+const getIntraAngle2 = (path4, i0, i1)=>getAngle(path4[i0], path4[i1])
+;
+function roundCornersPath(radius, all, path4) {
+    const l = path4.points.length;
+    if (l < 3) return path4;
+    const newTurtle = new Turtle();
+    const numPoints = path4.points.length;
+    const { x , y  } = path4.points[0];
+    newTurtle.move(newTurtle.start, {
+        x,
+        y
+    });
+    let remove = 0;
+    let firstLose = 0;
+    for(let i = 0; i < numPoints - 2; i++){
+        const dist0 = getIntraDist2(path4.points, i, i + 1);
+        const dist1 = getIntraDist2(path4.points, i + 1, i + 2);
+        const ang0 = getIntraAngle2(path4.points, i, i + 1);
+        const ang1 = getIntraAngle2(path4.points, i + 1, i + 2);
+        let ang = ang1 - ang0;
+        if (Math.abs(ang) < 3 && !all) {
+            newTurtle.goTo(path4.points[i + 1]);
+            if (i === path4.points.length - 3) {
+                newTurtle.goTo(path4.points[i + 2]);
+            }
+            remove = 0;
+            continue;
+        }
+        let lose = Math.abs(Math.tan(ang / 360 * Math.PI) * radius);
+        if (i === 0) firstLose = lose;
+        newTurtle.setAngle(ang0);
+        newTurtle.forward(dist0 - lose - remove);
+        if (ang > 180) ang -= 360;
+        else if (ang < -180) ang += 360;
+        arc(ang, radius, true, newTurtle);
+        if (i === path4.points.length - 3) {
+            if (isClosed(path4)) {
+                const dist21 = getIntraDist2(path4.points, 0, 1);
+                const ang2 = getIntraAngle2(path4.points, 0, 1);
+                let ang3 = ang2 - ang1;
+                const lose2 = Math.abs(Math.tan(ang3 / 360 * Math.PI) * radius);
+                newTurtle.path = newTurtle.pointFilter((x1, i1)=>i1 !== 0
+                );
+                newTurtle.forward(dist1 - lose - lose2);
+                if (ang3 > 180) ang3 -= 360;
+                else if (ang3 < -180) ang3 += 360;
+                arc(ang3, radius, true, newTurtle);
+                newTurtle.forward(dist21 - lose2 - firstLose);
+            } else {
+                newTurtle.forward(dist1 - lose);
+            }
+        }
+        remove = lose;
+    }
+    return newTurtle.path;
+}
+function roundCorners(radius, all, turtle) {
+    turtle.path = turtle.pathMap((p)=>roundCornersPath(radius, all, p)
+    );
+    return turtle;
+}
+function overlap1(p0, p1) {
+    return 0.0000001 > Math.abs(p0.x - p1.x) + Math.abs(p0.y - p1.y);
+}
+function deepFlatten(array) {
+    var result = [];
+    array.forEach(function(elem) {
+        if (Array.isArray(elem)) {
+            result = result.concat(deepFlatten(elem));
+        } else {
+            result.push(elem);
+        }
+    });
+    return result;
+}
+function thicken(distance, turtle) {
+    const turtles = deepFlatten(turtle.pathMap((p)=>new Turtle({
+            angle: 0,
+            path: [
+                p
+            ]
+        })
+    ));
+    turtles.forEach((t)=>{
+        const endType = overlap1(t.start, t.end) ? "etClosedLine" : "etOpenButt";
+        t.offset(distance / 2, {
+            endType,
+            jointType: "jtMiter"
+        });
+    });
+    turtle.path = group(...turtles).path;
+    return turtle;
+}
+const getAngle1 = (p1, p2)=>180 / Math.PI * Math.atan2(p2.y - p1.y, p2.x - p1.x)
+;
+const getIntraDist1 = (path4, i0, i1)=>getDistance1(path4[i0], path4[i1])
+;
+const getIntraAngle1 = (path4, i0, i1)=>getAngle1(path4[i0], path4[i1])
+;
+const isClosed1 = ({ points: points1  })=>{
+    const path4 = points1;
+    const EPSILON = 0.00000001;
+    const firstPoint = path4[0];
+    const lastPoint = path4[path4.length - 1];
+    const xDelta = Math.abs(firstPoint.x - lastPoint.x);
+    const yDelta = Math.abs(firstPoint.y - lastPoint.y);
+    const closed = xDelta < 0.00000001 && yDelta < 0.00000001;
+    return closed;
+};
+function dogbonePath(radius, all, path4) {
+    const l = path4.points.length;
+    if (l < 3) return path4;
+    const newTurtle = new Turtle();
+    const numPoints = path4.points.length;
+    const { x , y  } = path4.points[0];
+    newTurtle.move(newTurtle.start, {
+        x,
+        y
+    });
+    let remove = 0;
+    let firstLose = 0;
+    for(let i = 0; i < numPoints - 2; i++){
+        const dist0 = getIntraDist1(path4.points, i, i + 1);
+        const ang0 = getIntraAngle1(path4.points, i, i + 1);
+        const ang1 = getIntraAngle1(path4.points, i + 1, i + 2);
+        let ang = ang1 - ang0;
+        if (ang > 180) ang -= 360;
+        else if (ang < -180) ang += ang;
+        if (Math.abs(ang) < 3 && !all) {
+            newTurtle.goTo(path4.points[i + 1]);
+            if (i === path4.points.length - 3) {
+                newTurtle.goTo(path4.points[i + 2]);
+            }
+            remove = 0;
+            continue;
+        }
+        let lose = Math.abs(2 * radius * Math.sin(ang * Math.PI / 180 / 2));
+        if (i === 0) firstLose = lose;
+        newTurtle.forward(dist0 - lose - remove).left(-ang / 2).arc(2 * ang, radius).left(-ang / 2);
+        remove = lose;
+        if (i === path4.points.length - 3) {
+            const dist1 = getIntraDist1(path4.points, i + 1, i + 2);
+            if (isClosed1(path4)) {
+                const dist21 = getIntraDist1(path4.points, 0, 1);
+                const ang2 = getIntraAngle1(path4.points, 0, 1);
+                let ang3 = ang2 - ang1;
+                const lose2 = Math.abs(2 * radius * Math.sin(ang3 * Math.PI / 180 / 2));
+                newTurtle.path = newTurtle.pointFilter((x1, i1)=>i1 !== 0
+                );
+                newTurtle.forward(dist1 - lose - lose2);
+                newTurtle.left(-ang3 / 2).arc(2 * ang3, radius).left(-ang3 / 2).forward(dist21 - lose2 - firstLose);
+            } else {
+                newTurtle.forward(dist1 - lose);
+            }
+        }
+    }
+    return newTurtle.path;
+}
+function dogbone(radius, all, turtle) {
+    turtle.path = turtle.pathMap((p)=>dogbonePath(radius, all, p)
+    );
+    return turtle;
+}
+const directives = new WeakMap();
+const directive = (f)=>(...args)=>{
+        const d = f(...args);
+        directives.set(d, true);
+        return d;
+    }
+;
+const isDirective = (o)=>{
+    return typeof o === "function" && directives.has(o);
+};
+const isCEPolyfill = typeof window !== "undefined" && window.customElements != null && window.customElements.polyfillWrapFlushCallback !== void 0;
+const reparentNodes = (container, start, end = null, before = null)=>{
+    while(start !== end){
+        const n = start.nextSibling;
+        container.insertBefore(start, before);
+        start = n;
+    }
+};
+const removeNodes = (container, start, end = null)=>{
+    while(start !== end){
+        const n = start.nextSibling;
+        container.removeChild(start);
+        start = n;
+    }
+};
+const noChange = {
+};
+const nothing = {
+};
+const marker = `{{lit-${String(Math.random()).slice(2)}}}`;
+const nodeMarker = `<!--${marker}-->`;
+const markerRegex = new RegExp(`${marker}|${nodeMarker}`);
+const boundAttributeSuffix = "$lit$";
+class Template {
+    constructor(result, element5){
+        this.parts = [];
+        this.element = element5;
+        const nodesToRemove = [];
+        const stack = [];
+        const walker = document.createTreeWalker(element5.content, 133, null, false);
+        let lastPartIndex = 0;
+        let index3 = -1;
+        let partIndex = 0;
+        const { strings: strings5 , values: { length  }  } = result;
+        while(partIndex < length){
+            const node = walker.nextNode();
+            if (node === null) {
+                walker.currentNode = stack.pop();
+                continue;
+            }
+            index3++;
+            if (node.nodeType === 1) {
+                if (node.hasAttributes()) {
+                    const attributes = node.attributes;
+                    const { length: length2  } = attributes;
+                    let count = 0;
+                    for(let i = 0; i < length2; i++){
+                        if (endsWith(attributes[i].name, boundAttributeSuffix)) {
+                            count++;
+                        }
+                    }
+                    while((count--) > 0){
+                        const stringForPart = strings5[partIndex];
+                        const name = lastAttributeNameRegex.exec(stringForPart)[2];
+                        const attributeLookupName = name.toLowerCase() + boundAttributeSuffix;
+                        const attributeValue = node.getAttribute(attributeLookupName);
+                        node.removeAttribute(attributeLookupName);
+                        const statics = attributeValue.split(markerRegex);
+                        this.parts.push({
+                            type: "attribute",
+                            index: index3,
+                            name,
+                            strings: statics
+                        });
+                        partIndex += statics.length - 1;
+                    }
+                }
+                if (node.tagName === "TEMPLATE") {
+                    stack.push(node);
+                    walker.currentNode = node.content;
+                }
+            } else if (node.nodeType === 3) {
+                const data = node.data;
+                if (data.indexOf(marker) >= 0) {
+                    const parent = node.parentNode;
+                    const strings2 = data.split(markerRegex);
+                    const lastIndex = strings2.length - 1;
+                    for(let i = 0; i < lastIndex; i++){
+                        let insert;
+                        let s = strings2[i];
+                        if (s === "") {
+                            insert = createMarker();
+                        } else {
+                            const match = lastAttributeNameRegex.exec(s);
+                            if (match !== null && endsWith(match[2], boundAttributeSuffix)) {
+                                s = s.slice(0, match.index) + match[1] + match[2].slice(0, -boundAttributeSuffix.length) + match[3];
+                            }
+                            insert = document.createTextNode(s);
+                        }
+                        parent.insertBefore(insert, node);
+                        this.parts.push({
+                            type: "node",
+                            index: ++index3
+                        });
+                    }
+                    if (strings2[lastIndex] === "") {
+                        parent.insertBefore(createMarker(), node);
+                        nodesToRemove.push(node);
+                    } else {
+                        node.data = strings2[lastIndex];
+                    }
+                    partIndex += lastIndex;
+                }
+            } else if (node.nodeType === 8) {
+                if (node.data === marker) {
+                    const parent = node.parentNode;
+                    if (node.previousSibling === null || index3 === lastPartIndex) {
+                        index3++;
+                        parent.insertBefore(createMarker(), node);
+                    }
+                    lastPartIndex = index3;
+                    this.parts.push({
+                        type: "node",
+                        index: index3
+                    });
+                    if (node.nextSibling === null) {
+                        node.data = "";
+                    } else {
+                        nodesToRemove.push(node);
+                        index3--;
+                    }
+                    partIndex++;
+                } else {
+                    let i = -1;
+                    while((i = node.data.indexOf(marker, i + 1)) !== -1){
+                        this.parts.push({
+                            type: "node",
+                            index: -1
+                        });
+                        partIndex++;
+                    }
+                }
+            }
+        }
+        for (const n of nodesToRemove){
+            n.parentNode.removeChild(n);
+        }
+    }
+}
+const endsWith = (str, suffix)=>{
+    const index4 = str.length - suffix.length;
+    return index4 >= 0 && str.slice(index4) === suffix;
+};
+const isTemplatePartActive = (part)=>part.index !== -1
+;
+const createMarker = ()=>document.createComment("")
+;
+const lastAttributeNameRegex = /([ \x09\x0a\x0c\x0d])([^\0-\x1F\x7F-\x9F "'>=/]+)([ \x09\x0a\x0c\x0d]*=[ \x09\x0a\x0c\x0d]*(?:[^ \x09\x0a\x0c\x0d"'`<>=]*|"[^"]*|'[^']*))$/;
+class TemplateInstance {
+    constructor(template, processor, options2){
+        this.__parts = [];
+        this.template = template;
+        this.processor = processor;
+        this.options = options2;
+    }
+    update(values) {
+        let i = 0;
+        for (const part of this.__parts){
+            if (part !== void 0) {
+                part.setValue(values[i]);
+            }
+            i++;
+        }
+        for (const part1 of this.__parts){
+            if (part1 !== void 0) {
+                part1.commit();
+            }
+        }
+    }
+    _clone() {
+        const fragment = isCEPolyfill ? this.template.element.content.cloneNode(true) : document.importNode(this.template.element.content, true);
+        const stack1 = [];
+        const parts2 = this.template.parts;
+        const walker1 = document.createTreeWalker(fragment, 133, null, false);
+        let partIndex1 = 0;
+        let nodeIndex = 0;
+        let part;
+        let node = walker1.nextNode();
+        while(partIndex1 < parts2.length){
+            part = parts2[partIndex1];
+            if (!isTemplatePartActive(part)) {
+                this.__parts.push(void 0);
+                partIndex1++;
+                continue;
+            }
+            while(nodeIndex < part.index){
+                nodeIndex++;
+                if (node.nodeName === "TEMPLATE") {
+                    stack1.push(node);
+                    walker1.currentNode = node.content;
+                }
+                if ((node = walker1.nextNode()) === null) {
+                    walker1.currentNode = stack1.pop();
+                    node = walker1.nextNode();
+                }
+            }
+            if (part.type === "node") {
+                const part2 = this.processor.handleTextExpression(this.options);
+                part2.insertAfterNode(node.previousSibling);
+                this.__parts.push(part2);
+            } else {
+                this.__parts.push(...this.processor.handleAttributeExpressions(node, part.name, part.strings, this.options));
+            }
+            partIndex1++;
+        }
+        if (isCEPolyfill) {
+            document.adoptNode(fragment);
+            customElements.upgrade(fragment);
+        }
+        return fragment;
+    }
+}
+const policy = window.trustedTypes && trustedTypes.createPolicy("lit-html", {
+    createHTML: (s)=>s
+});
+const commentMarker = ` ${marker} `;
+class TemplateResult {
+    constructor(strings1, values, type1, processor1){
+        this.strings = strings1;
+        this.values = values;
+        this.type = type1;
+        this.processor = processor1;
+    }
+    getHTML() {
+        const l = this.strings.length - 1;
+        let html2 = "";
+        let isCommentBinding = false;
+        for(let i = 0; i < l; i++){
+            const s = this.strings[i];
+            const commentOpen = s.lastIndexOf("<!--");
+            isCommentBinding = (commentOpen > -1 || isCommentBinding) && s.indexOf("-->", commentOpen + 1) === -1;
+            const attributeMatch = lastAttributeNameRegex.exec(s);
+            if (attributeMatch === null) {
+                html2 += s + (isCommentBinding ? commentMarker : nodeMarker);
+            } else {
+                html2 += s.substr(0, attributeMatch.index) + attributeMatch[1] + attributeMatch[2] + boundAttributeSuffix + attributeMatch[3] + marker;
+            }
+        }
+        html2 += this.strings[l];
+        return html2;
+    }
+    getTemplateElement() {
+        const template1 = document.createElement("template");
+        let value = this.getHTML();
+        if (policy !== void 0) {
+            value = policy.createHTML(value);
+        }
+        template1.innerHTML = value;
+        return template1;
+    }
+}
+class SVGTemplateResult extends TemplateResult {
+    getHTML() {
+        return `<svg>${super.getHTML()}</svg>`;
+    }
+    getTemplateElement() {
+        const template1 = super.getTemplateElement();
+        const content = template1.content;
+        const svgElement = content.firstChild;
+        content.removeChild(svgElement);
+        reparentNodes(content, svgElement.firstChild);
+        return template1;
+    }
+}
+const isPrimitive = (value)=>{
+    return value === null || !(typeof value === "object" || typeof value === "function");
+};
+const isIterable = (value)=>{
+    return Array.isArray(value) || !!(value && value[Symbol.iterator]);
+};
+class AttributeCommitter {
+    constructor(element1, name3, strings2){
+        this.dirty = true;
+        this.element = element1;
+        this.name = name3;
+        this.strings = strings2;
+        this.parts = [];
+        for(let i = 0; i < strings2.length - 1; i++){
+            this.parts[i] = this._createPart();
+        }
+    }
+    _createPart() {
+        return new AttributePart(this);
+    }
+    _getValue() {
+        const strings3 = this.strings;
+        const l = strings3.length - 1;
+        const parts2 = this.parts;
+        if (l === 1 && strings3[0] === "" && strings3[1] === "") {
+            const v = parts2[0].value;
+            if (typeof v === "symbol") {
+                return String(v);
+            }
+            if (typeof v === "string" || !isIterable(v)) {
+                return v;
+            }
+        }
+        let text1 = "";
+        for(let i1 = 0; i1 < l; i1++){
+            text1 += strings3[i1];
+            const part = parts2[i1];
+            if (part !== void 0) {
+                const v = part.value;
+                if (isPrimitive(v) || !isIterable(v)) {
+                    text1 += typeof v === "string" ? v : String(v);
+                } else {
+                    for (const t of v){
+                        text1 += typeof t === "string" ? t : String(t);
+                    }
+                }
+            }
+        }
+        text1 += strings3[l];
+        return text1;
+    }
+    commit() {
+        if (this.dirty) {
+            this.dirty = false;
+            this.element.setAttribute(this.name, this._getValue());
+        }
+    }
+}
+class AttributePart {
+    constructor(committer){
+        this.value = void 0;
+        this.committer = committer;
+    }
+    setValue(value) {
+        if (value !== noChange && (!isPrimitive(value) || value !== this.value)) {
+            this.value = value;
+            if (!isDirective(value)) {
+                this.committer.dirty = true;
+            }
+        }
+    }
+    commit() {
+        while(isDirective(this.value)){
+            const directive2 = this.value;
+            this.value = noChange;
+            directive2(this);
+        }
+        if (this.value === noChange) {
+            return;
+        }
+        this.committer.commit();
+    }
+}
+class NodePart {
+    constructor(options1){
+        this.value = void 0;
+        this.__pendingValue = void 0;
+        this.options = options1;
+    }
+    appendInto(container) {
+        this.startNode = container.appendChild(createMarker());
+        this.endNode = container.appendChild(createMarker());
+    }
+    insertAfterNode(ref) {
+        this.startNode = ref;
+        this.endNode = ref.nextSibling;
+    }
+    appendIntoPart(part) {
+        part.__insert(this.startNode = createMarker());
+        part.__insert(this.endNode = createMarker());
+    }
+    insertAfterPart(ref) {
+        ref.__insert(this.startNode = createMarker());
+        this.endNode = ref.endNode;
+        ref.endNode = this.startNode;
+    }
+    setValue(value) {
+        this.__pendingValue = value;
+    }
+    commit() {
+        if (this.startNode.parentNode === null) {
+            return;
+        }
+        while(isDirective(this.__pendingValue)){
+            const directive2 = this.__pendingValue;
+            this.__pendingValue = noChange;
+            directive2(this);
+        }
+        const value = this.__pendingValue;
+        if (value === noChange) {
+            return;
+        }
+        if (isPrimitive(value)) {
+            if (value !== this.value) {
+                this.__commitText(value);
+            }
+        } else if (value instanceof TemplateResult) {
+            this.__commitTemplateResult(value);
+        } else if (value instanceof Node) {
+            this.__commitNode(value);
+        } else if (isIterable(value)) {
+            this.__commitIterable(value);
+        } else if (value === nothing) {
+            this.value = nothing;
+            this.clear();
+        } else {
+            this.__commitText(value);
+        }
+    }
+    __insert(node) {
+        this.endNode.parentNode.insertBefore(node, this.endNode);
+    }
+    __commitNode(value) {
+        if (this.value === value) {
+            return;
+        }
+        this.clear();
+        this.__insert(value);
+        this.value = value;
+    }
+    __commitText(value) {
+        const node = this.startNode.nextSibling;
+        value = value == null ? "" : value;
+        const valueAsString = typeof value === "string" ? value : String(value);
+        if (node === this.endNode.previousSibling && node.nodeType === 3) {
+            node.data = valueAsString;
+        } else {
+            this.__commitNode(document.createTextNode(valueAsString));
+        }
+        this.value = value;
+    }
+    __commitTemplateResult(value) {
+        const template1 = this.options.templateFactory(value);
+        if (this.value instanceof TemplateInstance && this.value.template === template1) {
+            this.value.update(value.values);
+        } else {
+            const instance = new TemplateInstance(template1, value.processor, this.options);
+            const fragment = instance._clone();
+            instance.update(value.values);
+            this.__commitNode(fragment);
+            this.value = instance;
+        }
+    }
+    __commitIterable(value) {
+        if (!Array.isArray(this.value)) {
+            this.value = [];
+            this.clear();
+        }
+        const itemParts = this.value;
+        let partIndex1 = 0;
+        let itemPart;
+        for (const item of value){
+            itemPart = itemParts[partIndex1];
+            if (itemPart === void 0) {
+                itemPart = new NodePart(this.options);
+                itemParts.push(itemPart);
+                if (partIndex1 === 0) {
+                    itemPart.appendIntoPart(this);
+                } else {
+                    itemPart.insertAfterPart(itemParts[partIndex1 - 1]);
+                }
+            }
+            itemPart.setValue(item);
+            itemPart.commit();
+            partIndex1++;
+        }
+        if (partIndex1 < itemParts.length) {
+            itemParts.length = partIndex1;
+            this.clear(itemPart && itemPart.endNode);
+        }
+    }
+    clear(startNode = this.startNode) {
+        removeNodes(this.startNode.parentNode, startNode.nextSibling, this.endNode);
+    }
+}
+class BooleanAttributePart {
+    constructor(element2, name1, strings3){
+        this.value = void 0;
+        this.__pendingValue = void 0;
+        if (strings3.length !== 2 || strings3[0] !== "" || strings3[1] !== "") {
+            throw new Error("Boolean attributes can only contain a single expression");
+        }
+        this.element = element2;
+        this.name = name1;
+        this.strings = strings3;
+    }
+    setValue(value) {
+        this.__pendingValue = value;
+    }
+    commit() {
+        while(isDirective(this.__pendingValue)){
+            const directive2 = this.__pendingValue;
+            this.__pendingValue = noChange;
+            directive2(this);
+        }
+        if (this.__pendingValue === noChange) {
+            return;
+        }
+        const value = !!this.__pendingValue;
+        if (this.value !== value) {
+            if (value) {
+                this.element.setAttribute(this.name, "");
+            } else {
+                this.element.removeAttribute(this.name);
+            }
+            this.value = value;
+        }
+        this.__pendingValue = noChange;
+    }
+}
+class PropertyCommitter extends AttributeCommitter {
+    constructor(element3, name2, strings4){
+        super(element3, name2, strings4);
+        this.single = strings4.length === 2 && strings4[0] === "" && strings4[1] === "";
+    }
+    _createPart() {
+        return new PropertyPart(this);
+    }
+    _getValue() {
+        if (this.single) {
+            return this.parts[0].value;
+        }
+        return super._getValue();
+    }
+    commit() {
+        if (this.dirty) {
+            this.dirty = false;
+            this.element[this.name] = this._getValue();
+        }
+    }
+}
+class PropertyPart extends AttributePart {
+}
+let eventOptionsSupported = false;
+(()=>{
+    try {
+        const options2 = {
+            get capture () {
+                eventOptionsSupported = true;
+                return false;
+            }
+        };
+        window.addEventListener("test", options2, options2);
+        window.removeEventListener("test", options2, options2);
+    } catch (_e) {
+    }
+})();
+class EventPart {
+    constructor(element4, eventName, eventContext){
+        this.value = void 0;
+        this.__pendingValue = void 0;
+        this.element = element4;
+        this.eventName = eventName;
+        this.eventContext = eventContext;
+        this.__boundHandleEvent = (e)=>this.handleEvent(e)
+        ;
+    }
+    setValue(value) {
+        this.__pendingValue = value;
+    }
+    commit() {
+        while(isDirective(this.__pendingValue)){
+            const directive2 = this.__pendingValue;
+            this.__pendingValue = noChange;
+            directive2(this);
+        }
+        if (this.__pendingValue === noChange) {
+            return;
+        }
+        const newListener = this.__pendingValue;
+        const oldListener = this.value;
+        const shouldRemoveListener = newListener == null || oldListener != null && (newListener.capture !== oldListener.capture || newListener.once !== oldListener.once || newListener.passive !== oldListener.passive);
+        const shouldAddListener = newListener != null && (oldListener == null || shouldRemoveListener);
+        if (shouldRemoveListener) {
+            this.element.removeEventListener(this.eventName, this.__boundHandleEvent, this.__options);
+        }
+        if (shouldAddListener) {
+            this.__options = getOptions(newListener);
+            this.element.addEventListener(this.eventName, this.__boundHandleEvent, this.__options);
+        }
+        this.value = newListener;
+        this.__pendingValue = noChange;
+    }
+    handleEvent(event) {
+        if (typeof this.value === "function") {
+            this.value.call(this.eventContext || this.element, event);
+        } else {
+            this.value.handleEvent(event);
+        }
+    }
+}
+const getOptions = (o)=>o && (eventOptionsSupported ? {
+        capture: o.capture,
+        passive: o.passive,
+        once: o.once
+    } : o.capture)
+;
+class DefaultTemplateProcessor {
+    handleAttributeExpressions(element, name, strings, options) {
+        const prefix = name[0];
+        if (prefix === ".") {
+            const committer2 = new PropertyCommitter(element, name.slice(1), strings);
+            return committer2.parts;
+        }
+        if (prefix === "@") {
+            return [
+                new EventPart(element, name.slice(1), options.eventContext)
+            ];
+        }
+        if (prefix === "?") {
+            return [
+                new BooleanAttributePart(element, name.slice(1), strings)
+            ];
+        }
+        const committer1 = new AttributeCommitter(element, name, strings);
+        return committer1.parts;
+    }
+    handleTextExpression(options) {
+        return new NodePart(options);
+    }
+}
+const defaultTemplateProcessor = new DefaultTemplateProcessor();
+function templateFactory(result1) {
+    let templateCache = templateCaches.get(result1.type);
+    if (templateCache === void 0) {
+        templateCache = {
+            stringsArray: new WeakMap(),
+            keyString: new Map()
+        };
+        templateCaches.set(result1.type, templateCache);
+    }
+    let template1 = templateCache.stringsArray.get(result1.strings);
+    if (template1 !== void 0) {
+        return template1;
+    }
+    const key = result1.strings.join(marker);
+    template1 = templateCache.keyString.get(key);
+    if (template1 === void 0) {
+        template1 = new Template(result1, result1.getTemplateElement());
+        templateCache.keyString.set(key, template1);
+    }
+    templateCache.stringsArray.set(result1.strings, template1);
+    return template1;
+}
+const templateCaches = new Map();
+const parts = new WeakMap();
+const render = (result1, container, options3)=>{
+    let part = parts.get(container);
+    if (part === void 0) {
+        removeNodes(container, container.firstChild);
+        parts.set(container, part = new NodePart(Object.assign({
+            templateFactory
+        }, options3)));
+        part.appendInto(container);
+    }
+    part.setValue(result1);
+    part.commit();
+};
+if (typeof window !== "undefined") {
+    (window["litHtmlVersions"] || (window["litHtmlVersions"] = [])).push("1.3.0");
+}
+const html = (strings6, ...values1)=>new TemplateResult(strings6, values1, "html", defaultTemplateProcessor)
+;
+const svg = (strings6, ...values1)=>new SVGTemplateResult(strings6, values1, "svg", defaultTemplateProcessor)
+;
+const last = (arr)=>arr[arr.length - 1]
+;
+function drawTurtle(turtle, { showTurtles =true , showPoints =false , filterConstruction =false  } = {
+}) {
+    const paths = turtle.pathMap((x, i1)=>drawPath(x, showPoints, filterConstruction)
+    );
+    return showTurtles ? [
+        ...paths,
+        drawTurtleHead(turtle)
+    ] : paths;
+}
+function drawTurtleHead(turtle) {
+    const points1 = turtle.points;
+    const lastPoint = last(points1);
+    const angle = turtle.angle;
+    const drawingViews = document.getElementById("inner-svg-view");
+    const w = Number(drawingViews.getAttribute("width").replace("px", ""));
+    const viewBox = drawingViews.getAttribute("viewBox").split(" ");
+    const vw = Number(viewBox[2]);
+    const headScale = vw / w;
+    const turtleSize = 12;
+    return svg`\n    <g transform="scale(1, -1)">\n      <polyline\n          class="scale-with-viewer"\n          fill = "orange"\n          vector-effect="non-scaling-stroke"\n          points="\n            ${lastPoint.x - 12 / 2}, ${lastPoint.y - 12} \n            ${lastPoint.x}, ${lastPoint.y} \n            ${lastPoint.x + 12 / 2}, ${lastPoint.y - 12}\n          "\n          transform="\n            rotate(${angle - 90}) \n            scale(${headScale})\n          "\n          transform-origin="${lastPoint.x} ${lastPoint.y}"/>\n    </g>\n  `;
+}
+const drawPath = (path4, showPoints, filterConstruction)=>{
+    if (path4.construction && filterConstruction) return "";
+    let points1 = path4.points.reduce((acc, point2)=>acc + ` ${point2.x},${point2.y}`
+    , " ");
+    let polyline1 = svg`\n    <g transform="scale(1, -1)">\n      <polyline \n        points="${points1}" \n        fill=${path4.fillColor} \n        stroke=${path4.strokeColor}\n        stroke-width="${path4.strokeWidth}px"\n        stroke-dasharray="${path4.dashed ? path4.dashed : "none"}"\n        stroke-linejoin=${path4.linejoin}\n        stroke-linecap=${path4.linecap}\n        vector-effect="non-scaling-stroke"/>\n      ${showPoints ? path4.points.map((p)=>svg`\n            <circle \n              cx="${p.x}" \n              cy="${p.y}" \n              r="0.05" \n              stroke="black" \n              stroke-width="0" \n              fill="red"/>\n          `
+    ) : ""}\n    </g>\n  `;
+    return polyline1;
+};
+const add = (x, y)=>{
+    if (typeof x !== typeof y) throw "Types of args to + don't match.";
+    if (Array.isArray(x) && Array.isArray(y)) return x.concat(y);
+    else return x + y;
+};
+const KEYWORDS = [
+    "if",
+    "elif",
+    "else",
+    "for",
+    "skip",
+    "break",
+    "import",
+    "as",
+    "def",
+    "dict"
+];
 class Environment {
     constructor(builtIns){
         this.scopes = [
@@ -10828,12 +11102,12 @@ class Environment {
         return value ? value.constant : false;
     }
     find(name) {
-        let i2 = 0;
+        let i1 = 0;
         let value;
-        while(i2 < this.scopes.length){
-            value = this.scopes[i2][name];
+        while(i1 < this.scopes.length){
+            value = this.scopes[i1][name];
             if (value !== undefined) break;
-            i2++;
+            i1++;
         }
         return value ? value.value : value;
     }
@@ -10886,94 +11160,13 @@ class Environment {
         if (num === 0) return;
         const l = this.turtles.length;
         const turtles = [];
-        for(let i2 = l - 1; i2 >= l - num; i2--){
+        for(let i1 = l - 1; i1 >= l - num; i1--){
             let current = this.turtles.pop();
             turtles.unshift(current);
         }
         const __final = group(...turtles);
         this.newTurtle(__final);
     }
-}
-const last = (arr)=>arr[arr.length - 1]
-;
-function drawTurtle(turtle, { showTurtles =true , showPoints =false , filterConstruction =false  } = {
-}) {
-    const paths = turtle.pathMap((x, i2)=>drawPath(x, showPoints, filterConstruction)
-    );
-    return showTurtles ? [
-        ...paths,
-        drawTurtleHead(turtle)
-    ] : paths;
-}
-function copy(turtle) {
-    return new Turtle(JSON.parse(JSON.stringify({
-        angle: turtle.angle,
-        path: turtle.path
-    })));
-}
-function union(turtle, args) {
-    turtle = args.length > 0 ? group(turtle, group(...args)) : turtle;
-    const [subjectPaths, clipPaths] = turtle.getBooleanForm();
-    if (clipPaths === undefined || subjectPaths === undefined) return turtle;
-    const subject = new __default(subjectPaths, true);
-    const clip = new __default(clipPaths, true);
-    const result1 = subject.union(clip);
-    turtle.setBooleanForm(result1);
-    return turtle;
-}
-function difference(turtle, args) {
-    turtle = args.length > 0 ? group(turtle, group(...args)) : turtle;
-    const [subjectPaths, clipPaths] = turtle.getBooleanForm();
-    if (clipPaths === undefined || subjectPaths === undefined) return turtle;
-    const subject = new __default(subjectPaths, true);
-    const clip = new __default(clipPaths, true);
-    const result1 = subject.difference(clip);
-    turtle.setBooleanForm(result1);
-    return turtle;
-}
-function intersect(turtle, args) {
-    turtle = args.length > 0 ? group(turtle, group(...args)) : turtle;
-    const [subjectPaths, clipPaths] = turtle.getBooleanForm();
-    if (clipPaths === undefined || subjectPaths === undefined) return turtle;
-    const subject = new __default(subjectPaths, true);
-    const clip = new __default(clipPaths, true);
-    const result1 = subject.intersect(clip);
-    turtle.setBooleanForm(result1);
-    return turtle;
-}
-const getDistance1 = (p1, p2)=>Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
-;
-function placeAlong(turtle, ogTurtle) {
-    const fp = turtle.start;
-    const lp = turtle.end;
-    const newTurtles = turtle.points.reduce((acc, cur, i2)=>{
-        const newTurtle = ogTurtle.copy().move(ogTurtle.cc, cur);
-        return acc.concat(newTurtle);
-    }, []);
-    const grouped = group(...newTurtles);
-    ogTurtle.path = grouped.path;
-    return ogTurtle;
-}
-function trim(start, end, turtle) {
-    const newTurtle = new Turtle();
-    let count = 0;
-    turtle.pathMap((path4)=>{
-        let started = false;
-        path4.points.forEach((p)=>{
-            if (count >= start && count <= end) {
-                if (!started) {
-                    newTurtle.newStroke(p);
-                    started = true;
-                } else {
-                    newTurtle.addPoint(p);
-                }
-            }
-            count++;
-        });
-    });
-    turtle.path = newTurtle.path;
-    turtle.alignHead();
-    return turtle;
 }
 const encloseInLayer = (func, env)=>{
     env.setMergeMarker();
@@ -11019,7 +11212,7 @@ const range = (start, stop, step)=>{
         step = start < stop ? 1 : -1;
     }
     var result1 = [];
-    for(var i2 = start; step > 0 ? i2 < stop : i2 > stop; i2 += step)result1.push(i2);
+    for(var i1 = start; step > 0 ? i1 < stop : i1 > stop; i1 += step)result1.push(i1);
     return result1;
 };
 const SKIP = "SWg@3y5WeXnTr2#&7v";
@@ -11057,7 +11250,7 @@ function callFunc(value, env, ast, startLine) {
     const arity = value.arity;
     const params = value.params || getParamNames(value.value);
     let args = [];
-    for(let i3 = 0; i3 < arity; i3++){
+    for(let i2 = 0; i2 < arity; i2++){
         if (ast.eof()) break;
         if (ast.peek().loc.line === startLine) args.push(ast.next());
     }
@@ -11074,8 +11267,8 @@ function callFunc(value, env, ast, startLine) {
                 env.add(key, value.extend[key].value);
             }
         }
-        args.forEach((arg, i4)=>{
-            const name4 = params[i4];
+        args.forEach((arg, i3)=>{
+            const name4 = params[i3];
             env.add(name4, arg);
         });
         result2 = evaluate(value.body, env);
@@ -11098,10 +11291,10 @@ function assign(node, env, ast) {
     let right = evaluate(node.right, env, ast);
     if (node.left.type === "array") {
         if (!Array.isArray(right)) throw "Right value is not an array so can't be destructured.";
-        node.left.value.forEach((token, i3)=>{
-            if (right[i3] === undefined) throw "More symbols than array values.";
+        node.left.value.forEach((token, i2)=>{
+            if (right[i2] === undefined) throw "More symbols than array values.";
             const symbol = canWrite(token);
-            env.add(symbol, right[i3], constant);
+            env.add(symbol, right[i2], constant);
         });
     } else {
         const symbol = canWrite(node.left);
@@ -11222,8 +11415,8 @@ let evaluate = (node, env, ast = [])=>{
         let iterator = node.iterator !== undefined ? node.iterator : undefined;
         if (!isNaN(iterable) && !Array.isArray(iterable)) iterable = range(iterable);
         if (!Array.isArray(iterable)) throw "Iterable must be an array.";
-        for(let i3 = 0; i3 < iterable.length; i3++){
-            if (iterator !== undefined) env.add(iterator, iterable[i3]);
+        for(let i2 = 0; i2 < iterable.length; i2++){
+            if (iterator !== undefined) env.add(iterator, iterable[i2]);
             let next = evaluate(node.body, env);
             if (next === SKIP) continue;
             else if (next === BREAK) break;
@@ -11261,7 +11454,7 @@ let builtIns1 = {
         arity: 2,
         value (number, body, env) {
             env.setMergeMarker();
-            for(let i3 = 0; i3 < number; i3++){
+            for(let i2 = 0; i2 < number; i2++){
                 env.newTurtle(env.turtle().copy());
                 evaluate(body, env);
             }
@@ -11564,7 +11757,7 @@ let builtIns1 = {
             }
             if (step > 0 && start >= stop || step < 0 && start <= stop) return [];
             var result2 = [];
-            for(var i3 = start; step > 0 ? i3 < stop : i3 > stop; i3 += step)result2.push(i3);
+            for(var i2 = start; step > 0 ? i2 < stop : i2 > stop; i2 += step)result2.push(i2);
             return result2;
         }
     },
@@ -11775,9 +11968,9 @@ const OPERATORS = [
         "."
     ]
 ];
-const PRECEDENCE = Object.fromEntries(OPERATORS.map((level, i4)=>level.map((op)=>[
+const PRECEDENCE = Object.fromEntries(OPERATORS.map((level, i3)=>level.map((op)=>[
             op,
-            i4 + 1
+            i3 + 1
         ]
     )
 ).flat());
@@ -12301,203 +12494,10 @@ const run = async (ast, env, { line: line1 = -1 , col =0  })=>{
     }
     return evaluate(astStream, env);
 };
-function drawTurtleHead(turtle) {
-    const points1 = turtle.points;
-    const lastPoint = last(points1);
-    const angle = turtle.angle;
-    const drawingViews = document.getElementById("inner-svg-view");
-    const w = Number(drawingViews.getAttribute("width").replace("px", ""));
-    const viewBox = drawingViews.getAttribute("viewBox").split(" ");
-    const vw = Number(viewBox[2]);
-    const headScale = vw / w;
-    const turtleSize = 12;
-    return svg`\n    <g transform="scale(1, -1)">\n      <polyline\n          class="scale-with-viewer"\n          fill = "orange"\n          vector-effect="non-scaling-stroke"\n          points="\n            ${lastPoint.x - 12 / 2}, ${lastPoint.y - 12} \n            ${lastPoint.x}, ${lastPoint.y} \n            ${lastPoint.x + 12 / 2}, ${lastPoint.y - 12}\n          "\n          transform="\n            rotate(${angle - 90}) \n            scale(${headScale})\n          "\n          transform-origin="${lastPoint.x} ${lastPoint.y}"/>\n    </g>\n  `;
-}
-const drawPath = (path4, showPoints, filterConstruction)=>{
-    if (path4.construction && filterConstruction) return "";
-    let points1 = path4.points.reduce((acc, point2)=>acc + ` ${point2.x},${point2.y}`
-    , " ");
-    let polyline1 = svg`\n    <g transform="scale(1, -1)">\n      <polyline \n        points="${points1}" \n        fill=${path4.fillColor} \n        stroke=${path4.strokeColor}\n        stroke-width="${path4.strokeWidth}px"\n        stroke-dasharray="${path4.dashed ? path4.dashed : "none"}"\n        stroke-linejoin=${path4.linejoin}\n        stroke-linecap=${path4.linecap}\n        vector-effect="non-scaling-stroke"/>\n      ${showPoints ? path4.points.map((p)=>svg`\n            <circle \n              cx="${p.x}" \n              cy="${p.y}" \n              r="0.05" \n              stroke="black" \n              stroke-width="0" \n              fill="red"/>\n          `
-    ) : ""}\n    </g>\n  `;
-    return polyline1;
-};
-function firstPathHelper(path4) {
-    const first = path4[0];
-    return Array.isArray(first) ? firstPathHelper(first) : first;
-}
-function pathMapHelper(path4, f) {
-    return Array.isArray(path4) ? path4.map((p)=>pathMapHelper(p, f)
-    ) : f(path4);
-}
-const getIntraDist2 = (path4, i0, i11)=>getDistance(path4[i0], path4[i11])
-;
-const getIntraAngle2 = (path4, i0, i11)=>getAngle(path4[i0], path4[i11])
-;
-function roundCornersPath(radius, all, path4) {
-    const l = path4.points.length;
-    if (l < 3) return path4;
-    const newTurtle = new Turtle();
-    const numPoints = path4.points.length;
-    const { x , y  } = path4.points[0];
-    newTurtle.move(newTurtle.start, {
-        x,
-        y
-    });
-    let remove = 0;
-    let firstLose = 0;
-    for(let i4 = 0; i4 < numPoints - 2; i4++){
-        const dist0 = getIntraDist2(path4.points, i4, i4 + 1);
-        const dist1 = getIntraDist2(path4.points, i4 + 1, i4 + 2);
-        const ang0 = getIntraAngle2(path4.points, i4, i4 + 1);
-        const ang1 = getIntraAngle2(path4.points, i4 + 1, i4 + 2);
-        let ang = ang1 - ang0;
-        if (Math.abs(ang) < 3 && !all) {
-            newTurtle.goTo(path4.points[i4 + 1]);
-            if (i4 === path4.points.length - 3) {
-                newTurtle.goTo(path4.points[i4 + 2]);
-            }
-            remove = 0;
-            continue;
-        }
-        let lose = Math.abs(Math.tan(ang / 360 * Math.PI) * radius);
-        if (i4 === 0) firstLose = lose;
-        newTurtle.setAngle(ang0);
-        newTurtle.forward(dist0 - lose - remove);
-        if (ang > 180) ang -= 360;
-        else if (ang < -180) ang += 360;
-        arc(ang, radius, true, newTurtle);
-        if (i4 === path4.points.length - 3) {
-            if (isClosed(path4)) {
-                const dist21 = getIntraDist2(path4.points, 0, 1);
-                const ang2 = getIntraAngle2(path4.points, 0, 1);
-                let ang3 = ang2 - ang1;
-                const lose2 = Math.abs(Math.tan(ang3 / 360 * Math.PI) * radius);
-                newTurtle.path = newTurtle.pointFilter((x1, i5)=>i5 !== 0
-                );
-                newTurtle.forward(dist1 - lose - lose2);
-                if (ang3 > 180) ang3 -= 360;
-                else if (ang3 < -180) ang3 += 360;
-                arc(ang3, radius, true, newTurtle);
-                newTurtle.forward(dist21 - lose2 - firstLose);
-            } else {
-                newTurtle.forward(dist1 - lose);
-            }
-        }
-        remove = lose;
-    }
-    return newTurtle.path;
-}
-function roundCorners(radius, all, turtle) {
-    turtle.path = turtle.pathMap((p)=>roundCornersPath(radius, all, p)
-    );
-    return turtle;
-}
-function overlap1(p0, p1) {
-    return 0.0000001 > Math.abs(p0.x - p1.x) + Math.abs(p0.y - p1.y);
-}
-function deepFlatten(array) {
-    var result3 = [];
-    array.forEach(function(elem) {
-        if (Array.isArray(elem)) {
-            result3 = result3.concat(deepFlatten(elem));
-        } else {
-            result3.push(elem);
-        }
-    });
-    return result3;
-}
-function thicken(distance, turtle) {
-    const turtles = deepFlatten(turtle.pathMap((p)=>new Turtle({
-            angle: 0,
-            path: [
-                p
-            ]
-        })
-    ));
-    turtles.forEach((t)=>{
-        const endType = overlap1(t.start, t.end) ? "etClosedLine" : "etOpenButt";
-        t.offset(distance / 2, {
-            endType,
-            jointType: "jtMiter"
-        });
-    });
-    turtle.path = group(...turtles).path;
-    return turtle;
-}
-const getAngle1 = (p1, p2)=>180 / Math.PI * Math.atan2(p2.y - p1.y, p2.x - p1.x)
-;
-const getIntraDist1 = (path4, i0, i11)=>getDistance1(path4[i0], path4[i11])
-;
-const getIntraAngle1 = (path4, i0, i11)=>getAngle1(path4[i0], path4[i11])
-;
-const isClosed1 = ({ points: points1  })=>{
-    const path4 = points1;
-    const EPSILON = 0.00000001;
-    const firstPoint = path4[0];
-    const lastPoint = path4[path4.length - 1];
-    const xDelta = Math.abs(firstPoint.x - lastPoint.x);
-    const yDelta = Math.abs(firstPoint.y - lastPoint.y);
-    const closed = xDelta < 0.00000001 && yDelta < 0.00000001;
-    return closed;
-};
-function dogbonePath(radius, all, path4) {
-    const l = path4.points.length;
-    if (l < 3) return path4;
-    const newTurtle = new Turtle();
-    const numPoints = path4.points.length;
-    const { x , y  } = path4.points[0];
-    newTurtle.move(newTurtle.start, {
-        x,
-        y
-    });
-    let remove = 0;
-    let firstLose = 0;
-    for(let i4 = 0; i4 < numPoints - 2; i4++){
-        const dist0 = getIntraDist1(path4.points, i4, i4 + 1);
-        const ang0 = getIntraAngle1(path4.points, i4, i4 + 1);
-        const ang1 = getIntraAngle1(path4.points, i4 + 1, i4 + 2);
-        let ang = ang1 - ang0;
-        if (ang > 180) ang -= 360;
-        else if (ang < -180) ang += ang;
-        if (Math.abs(ang) < 3 && !all) {
-            newTurtle.goTo(path4.points[i4 + 1]);
-            if (i4 === path4.points.length - 3) {
-                newTurtle.goTo(path4.points[i4 + 2]);
-            }
-            remove = 0;
-            continue;
-        }
-        let lose = Math.abs(2 * radius * Math.sin(ang * Math.PI / 180 / 2));
-        if (i4 === 0) firstLose = lose;
-        newTurtle.forward(dist0 - lose - remove).left(-ang / 2).arc(2 * ang, radius).left(-ang / 2);
-        remove = lose;
-        if (i4 === path4.points.length - 3) {
-            const dist1 = getIntraDist1(path4.points, i4 + 1, i4 + 2);
-            if (isClosed1(path4)) {
-                const dist21 = getIntraDist1(path4.points, 0, 1);
-                const ang2 = getIntraAngle1(path4.points, 0, 1);
-                let ang3 = ang2 - ang1;
-                const lose2 = Math.abs(2 * radius * Math.sin(ang3 * Math.PI / 180 / 2));
-                newTurtle.path = newTurtle.pointFilter((x1, i5)=>i5 !== 0
-                );
-                newTurtle.forward(dist1 - lose - lose2);
-                newTurtle.left(-ang3 / 2).arc(2 * ang3, radius).left(-ang3 / 2).forward(dist21 - lose2 - firstLose);
-            } else {
-                newTurtle.forward(dist1 - lose);
-            }
-        }
-    }
-    return newTurtle.path;
-}
-function dogbone(radius, all, turtle) {
-    turtle.path = turtle.pathMap((p)=>dogbonePath(radius, all, p)
-    );
-    return turtle;
-}
 const is_letter = (ch)=>/[a-z]/i.test(ch)
 ;
 const regExString = `${Object.keys(builtIns1).sort((a, b)=>b.length - a.length
-).reduce((acc, cur, i4)=>acc + "(" + cur + "(\\s|\\b))" + (i4 !== Object.keys(builtIns1).length - 1 ? `|` : "")
+).reduce((acc, cur, i3)=>acc + "(" + cur + "(\\s|\\b))" + (i3 !== Object.keys(builtIns1).length - 1 ? `|` : "")
 , "")}`;
 const builtInRegEx = new RegExp(regExString, "i");
 const kw = [
@@ -12584,7 +12584,7 @@ function wordAt(cm, pos) {
     };
 }
 function isSelectedRange(ranges, from, to) {
-    for(var i4 = 0; i4 < ranges.length; i4++)if (CodeMirror.cmpPos(ranges[i4].from(), from) == 0 && CodeMirror.cmpPos(ranges[i4].to(), to) == 0) return true;
+    for(var i3 = 0; i3 < ranges.length; i3++)if (CodeMirror.cmpPos(ranges[i3].from(), from) == 0 && CodeMirror.cmpPos(ranges[i3].to(), to) == 0) return true;
     return false;
 }
 function selectNextOccurrence(cm) {
@@ -12777,7 +12777,7 @@ const drawDims = (turtles)=>{
 };
 const renderApp = (state)=>{
     const turtles = state.turtles;
-    const content = turtles.map((turtle, i4)=>drawTurtle(turtle, {
+    const content = turtles.map((turtle, i3)=>drawTurtle(turtle, {
             showTurtles: state.showTurtles
         })
     );
@@ -12894,7 +12894,7 @@ Delegate.prototype.on = function(eventType, selector, handler, useCapture) {
     return this;
 };
 Delegate.prototype.off = function(eventType, selector, handler, useCapture) {
-    let i4;
+    let i3;
     let listener;
     let listenerMap;
     let listenerList;
@@ -12922,11 +12922,11 @@ Delegate.prototype.off = function(eventType, selector, handler, useCapture) {
     if (!listenerList || !listenerList.length) {
         return this;
     }
-    for(i4 = listenerList.length - 1; i4 >= 0; i4--){
-        listener = listenerList[i4];
+    for(i3 = listenerList.length - 1; i3 >= 0; i3--){
+        listener = listenerList[i3];
         if ((!selector || selector === listener.selector) && (!handler || handler === listener.handler)) {
             this._removedListeners.push(listener);
-            listenerList.splice(i4, 1);
+            listenerList.splice(i3, 1);
         }
     }
     if (!listenerList.length) {
@@ -12938,7 +12938,7 @@ Delegate.prototype.off = function(eventType, selector, handler, useCapture) {
     return this;
 };
 Delegate.prototype.handle = function(event) {
-    let i4;
+    let i3;
     let l;
     const type2 = event.type;
     let root;
@@ -12979,8 +12979,8 @@ Delegate.prototype.handle = function(event) {
     let toFire = [];
     l = listenerList.length;
     while(target && l){
-        for(i4 = 0; i4 < l; i4++){
-            listener = listenerList[i4];
+        for(i3 = 0; i3 < l; i3++){
+            listener = listenerList[i3];
             if (!listener) {
                 break;
             }
@@ -13009,14 +13009,14 @@ Delegate.prototype.handle = function(event) {
         }
     }
     let ret;
-    for(i4 = 0; i4 < toFire.length; i4++){
-        if (this._removedListeners.indexOf(toFire[i4][2]) > -1) {
+    for(i3 = 0; i3 < toFire.length; i3++){
+        if (this._removedListeners.indexOf(toFire[i3][2]) > -1) {
             continue;
         }
-        returned = this.fire.apply(this, toFire[i4]);
+        returned = this.fire.apply(this, toFire[i3]);
         if (returned === false) {
-            toFire[i4][0][eventIgnore] = true;
-            toFire[i4][0].preventDefault();
+            toFire[i3][0][eventIgnore] = true;
+            toFire[i3][0].preventDefault();
             ret = false;
             break;
         }
@@ -13339,9 +13339,9 @@ var inited = false;
 function init1() {
     inited = true;
     var code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    for(var i4 = 0, len = code.length; i4 < len; ++i4){
-        lookup[i4] = code[i4];
-        revLookup[code.charCodeAt(i4)] = i4;
+    for(var i3 = 0, len = code.length; i3 < len; ++i3){
+        lookup[i3] = code[i3];
+        revLookup[code.charCodeAt(i3)] = i3;
     }
     revLookup["-".charCodeAt(0)] = 62;
     revLookup["_".charCodeAt(0)] = 63;
@@ -13350,7 +13350,7 @@ function toByteArray(b64) {
     if (!inited) {
         init1();
     }
-    var i4, j, l, tmp, placeHolders, arr;
+    var i3, j, l, tmp, placeHolders, arr;
     var len = b64.length;
     if (len % 4 > 0) {
         throw new Error("Invalid string. Length must be a multiple of 4");
@@ -13359,17 +13359,17 @@ function toByteArray(b64) {
     arr = new Arr(len * 3 / 4 - placeHolders);
     l = placeHolders > 0 ? len - 4 : len;
     var L = 0;
-    for(i4 = 0, j = 0; i4 < l; i4 += 4, j += 3){
-        tmp = revLookup[b64.charCodeAt(i4)] << 18 | revLookup[b64.charCodeAt(i4 + 1)] << 12 | revLookup[b64.charCodeAt(i4 + 2)] << 6 | revLookup[b64.charCodeAt(i4 + 3)];
+    for(i3 = 0, j = 0; i3 < l; i3 += 4, j += 3){
+        tmp = revLookup[b64.charCodeAt(i3)] << 18 | revLookup[b64.charCodeAt(i3 + 1)] << 12 | revLookup[b64.charCodeAt(i3 + 2)] << 6 | revLookup[b64.charCodeAt(i3 + 3)];
         arr[L++] = tmp >> 16 & 255;
         arr[L++] = tmp >> 8 & 255;
         arr[L++] = tmp & 255;
     }
     if (placeHolders === 2) {
-        tmp = revLookup[b64.charCodeAt(i4)] << 2 | revLookup[b64.charCodeAt(i4 + 1)] >> 4;
+        tmp = revLookup[b64.charCodeAt(i3)] << 2 | revLookup[b64.charCodeAt(i3 + 1)] >> 4;
         arr[L++] = tmp & 255;
     } else if (placeHolders === 1) {
-        tmp = revLookup[b64.charCodeAt(i4)] << 10 | revLookup[b64.charCodeAt(i4 + 1)] << 4 | revLookup[b64.charCodeAt(i4 + 2)] >> 2;
+        tmp = revLookup[b64.charCodeAt(i3)] << 10 | revLookup[b64.charCodeAt(i3 + 1)] << 4 | revLookup[b64.charCodeAt(i3 + 2)] >> 2;
         arr[L++] = tmp >> 8 & 255;
         arr[L++] = tmp & 255;
     }
@@ -13381,8 +13381,8 @@ function tripletToBase64(num) {
 function encodeChunk(uint8, start, end1) {
     var tmp;
     var output = [];
-    for(var i4 = start; i4 < end1; i4 += 3){
-        tmp = (uint8[i4] << 16) + (uint8[i4 + 1] << 8) + uint8[i4 + 2];
+    for(var i3 = start; i3 < end1; i3 += 3){
+        tmp = (uint8[i3] << 16) + (uint8[i3 + 1] << 8) + uint8[i3 + 2];
         output.push(tripletToBase64(tmp));
     }
     return output.join("");
@@ -13397,8 +13397,8 @@ function fromByteArray(uint8) {
     var output = "";
     var parts1 = [];
     var maxChunkLength = 16383;
-    for(var i4 = 0, len2 = len - extraBytes; i4 < len2; i4 += maxChunkLength){
-        parts1.push(encodeChunk(uint8, i4, i4 + maxChunkLength > len2 ? len2 : i4 + maxChunkLength));
+    for(var i3 = 0, len2 = len - extraBytes; i3 < len2; i3 += maxChunkLength){
+        parts1.push(encodeChunk(uint8, i3, i3 + maxChunkLength > len2 ? len2 : i3 + maxChunkLength));
     }
     if (extraBytes === 1) {
         tmp = uint8[len - 1];
@@ -13421,19 +13421,19 @@ function read(buffer, offset2, isLE, mLen, nBytes) {
     var eMax = (1 << eLen) - 1;
     var eBias = eMax >> 1;
     var nBits = -7;
-    var i4 = isLE ? nBytes - 1 : 0;
+    var i3 = isLE ? nBytes - 1 : 0;
     var d = isLE ? -1 : 1;
-    var s = buffer[offset2 + i4];
-    i4 += d;
+    var s = buffer[offset2 + i3];
+    i3 += d;
     e = s & (1 << -nBits) - 1;
     s >>= -nBits;
     nBits += eLen;
-    for(; nBits > 0; e = e * 256 + buffer[offset2 + i4], i4 += d, nBits -= 8){
+    for(; nBits > 0; e = e * 256 + buffer[offset2 + i3], i3 += d, nBits -= 8){
     }
     m = e & (1 << -nBits) - 1;
     e >>= -nBits;
     nBits += mLen;
-    for(; nBits > 0; m = m * 256 + buffer[offset2 + i4], i4 += d, nBits -= 8){
+    for(; nBits > 0; m = m * 256 + buffer[offset2 + i3], i3 += d, nBits -= 8){
     }
     if (e === 0) {
         e = 1 - eBias;
@@ -13451,7 +13451,7 @@ function write(buffer, value, offset2, isLE, mLen, nBytes) {
     var eMax = (1 << eLen) - 1;
     var eBias = eMax >> 1;
     var rt = mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0;
-    var i4 = isLE ? 0 : nBytes - 1;
+    var i3 = isLE ? 0 : nBytes - 1;
     var d = isLE ? 1 : -1;
     var s = value < 0 || value === 0 && 1 / value < 0 ? 1 : 0;
     value = Math.abs(value);
@@ -13484,13 +13484,13 @@ function write(buffer, value, offset2, isLE, mLen, nBytes) {
             e = 0;
         }
     }
-    for(; mLen >= 8; buffer[offset2 + i4] = m & 255, i4 += d, m /= 256, mLen -= 8){
+    for(; mLen >= 8; buffer[offset2 + i3] = m & 255, i3 += d, m /= 256, mLen -= 8){
     }
     e = e << mLen | m;
     eLen += mLen;
-    for(; eLen > 0; buffer[offset2 + i4] = e & 255, i4 += d, e /= 256, eLen -= 8){
+    for(; eLen > 0; buffer[offset2 + i3] = e & 255, i3 += d, e /= 256, eLen -= 8){
     }
-    buffer[offset2 + i4 - d] |= s * 128;
+    buffer[offset2 + i3 - d] |= s * 128;
 }
 var toString = {
 }.toString;
@@ -13578,8 +13578,8 @@ function allocUnsafe1(that, size) {
     assertSize(size);
     that = createBuffer(that, size < 0 ? 0 : checked1(size) | 0);
     if (!Buffer2.TYPED_ARRAY_SUPPORT) {
-        for(var i4 = 0; i4 < size; ++i4){
-            that[i4] = 0;
+        for(var i3 = 0; i3 < size; ++i3){
+            that[i3] = 0;
         }
     }
     return that;
@@ -13608,8 +13608,8 @@ function fromString1(that, string1, encoding) {
 function fromArrayLike(that, array) {
     var length1 = array.length < 0 ? 0 : checked1(array.length) | 0;
     that = createBuffer(that, length1);
-    for(var i5 = 0; i5 < length1; i5 += 1){
-        that[i5] = array[i5] & 255;
+    for(var i4 = 0; i4 < length1; i4 += 1){
+        that[i4] = array[i4] & 255;
     }
     return that;
 }
@@ -13682,10 +13682,10 @@ Buffer2.compare = function compare(a, b) {
     if (a === b) return 0;
     var x = a.length;
     var y = b.length;
-    for(var i5 = 0, len = Math.min(x, y); i5 < len; ++i5){
-        if (a[i5] !== b[i5]) {
-            x = a[i5];
-            y = b[i5];
+    for(var i4 = 0, len = Math.min(x, y); i4 < len; ++i4){
+        if (a[i4] !== b[i4]) {
+            x = a[i4];
+            y = b[i4];
             break;
         }
     }
@@ -13718,17 +13718,17 @@ Buffer2.concat = function concat(list, length1) {
     if (list.length === 0) {
         return Buffer2.alloc(0);
     }
-    var i5;
+    var i4;
     if (length1 === void 0) {
         length1 = 0;
-        for(i5 = 0; i5 < list.length; ++i5){
-            length1 += list[i5].length;
+        for(i4 = 0; i4 < list.length; ++i4){
+            length1 += list[i4].length;
         }
     }
     var buffer = Buffer2.allocUnsafe(length1);
     var pos = 0;
-    for(i5 = 0; i5 < list.length; ++i5){
-        var buf = list[i5];
+    for(i4 = 0; i4 < list.length; ++i4){
+        var buf = list[i4];
         if (!internalIsBuffer1(buf)) {
             throw new TypeError('"list" argument must be an Array of Buffers');
         }
@@ -13825,17 +13825,17 @@ function slowToString(encoding, start, end1) {
 }
 Buffer2.prototype._isBuffer = true;
 function swap(b, n1, m) {
-    var i5 = b[n1];
+    var i4 = b[n1];
     b[n1] = b[m];
-    b[m] = i5;
+    b[m] = i4;
 }
 Buffer2.prototype.swap16 = function swap16() {
     var len = this.length;
     if (len % 2 !== 0) {
         throw new RangeError("Buffer size must be a multiple of 16-bits");
     }
-    for(var i5 = 0; i5 < len; i5 += 2){
-        swap(this, i5, i5 + 1);
+    for(var i4 = 0; i4 < len; i4 += 2){
+        swap(this, i4, i4 + 1);
     }
     return this;
 };
@@ -13844,9 +13844,9 @@ Buffer2.prototype.swap32 = function swap32() {
     if (len % 4 !== 0) {
         throw new RangeError("Buffer size must be a multiple of 32-bits");
     }
-    for(var i5 = 0; i5 < len; i5 += 4){
-        swap(this, i5, i5 + 3);
-        swap(this, i5 + 1, i5 + 2);
+    for(var i4 = 0; i4 < len; i4 += 4){
+        swap(this, i4, i4 + 3);
+        swap(this, i4 + 1, i4 + 2);
     }
     return this;
 };
@@ -13855,11 +13855,11 @@ Buffer2.prototype.swap64 = function swap64() {
     if (len % 8 !== 0) {
         throw new RangeError("Buffer size must be a multiple of 64-bits");
     }
-    for(var i5 = 0; i5 < len; i5 += 8){
-        swap(this, i5, i5 + 7);
-        swap(this, i5 + 1, i5 + 6);
-        swap(this, i5 + 2, i5 + 5);
-        swap(this, i5 + 3, i5 + 4);
+    for(var i4 = 0; i4 < len; i4 += 8){
+        swap(this, i4, i4 + 7);
+        swap(this, i4 + 1, i4 + 6);
+        swap(this, i4 + 2, i4 + 5);
+        swap(this, i4 + 3, i4 + 4);
     }
     return this;
 };
@@ -13921,10 +13921,10 @@ Buffer2.prototype.compare = function compare2(target, start, end1, thisStart, th
     var len = Math.min(x, y);
     var thisCopy = this.slice(thisStart, thisEnd);
     var targetCopy = target.slice(start, end1);
-    for(var i5 = 0; i5 < len; ++i5){
-        if (thisCopy[i5] !== targetCopy[i5]) {
-            x = thisCopy[i5];
-            y = targetCopy[i5];
+    for(var i4 = 0; i4 < len; ++i4){
+        if (thisCopy[i4] !== targetCopy[i4]) {
+            x = thisCopy[i4];
+            y = targetCopy[i4];
             break;
         }
     }
@@ -14000,29 +14000,29 @@ function arrayIndexOf1(arr, val, byteOffset, encoding, dir) {
             return buf.readUInt16BE(i21 * indexSize);
         }
     }
-    var i5;
+    var i4;
     if (dir) {
         var foundIndex = -1;
-        for(i5 = byteOffset; i5 < arrLength; i5++){
-            if (read2(arr, i5) === read2(val, foundIndex === -1 ? 0 : i5 - foundIndex)) {
-                if (foundIndex === -1) foundIndex = i5;
-                if (i5 - foundIndex + 1 === valLength) return foundIndex * indexSize;
+        for(i4 = byteOffset; i4 < arrLength; i4++){
+            if (read2(arr, i4) === read2(val, foundIndex === -1 ? 0 : i4 - foundIndex)) {
+                if (foundIndex === -1) foundIndex = i4;
+                if (i4 - foundIndex + 1 === valLength) return foundIndex * indexSize;
             } else {
-                if (foundIndex !== -1) i5 -= i5 - foundIndex;
+                if (foundIndex !== -1) i4 -= i4 - foundIndex;
                 foundIndex = -1;
             }
         }
     } else {
         if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength;
-        for(i5 = byteOffset; i5 >= 0; i5--){
+        for(i4 = byteOffset; i4 >= 0; i4--){
             var found = true;
             for(var j = 0; j < valLength; j++){
-                if (read2(arr, i5 + j) !== read2(val, j)) {
+                if (read2(arr, i4 + j) !== read2(val, j)) {
                     found = false;
                     break;
                 }
             }
-            if (found) return i5;
+            if (found) return i4;
         }
     }
     return -1;
@@ -14052,12 +14052,12 @@ function hexWrite(buf, string1, offset2, length1) {
     if (length1 > strLen / 2) {
         length1 = strLen / 2;
     }
-    for(var i5 = 0; i5 < length1; ++i5){
-        var parsed = parseInt(string1.substr(i5 * 2, 2), 16);
-        if (isNaN(parsed)) return i5;
-        buf[offset2 + i5] = parsed;
+    for(var i4 = 0; i4 < length1; ++i4){
+        var parsed = parseInt(string1.substr(i4 * 2, 2), 16);
+        if (isNaN(parsed)) return i4;
+        buf[offset2 + i4] = parsed;
     }
-    return i5;
+    return i4;
 }
 function utf8Write(buf, string1, offset2, length1) {
     return blitBuffer1(utf8ToBytes1(string1, buf.length - offset2), buf, offset2, length1);
@@ -14144,12 +14144,12 @@ function base64Slice1(buf, start, end1) {
 function utf8Slice1(buf, start, end1) {
     end1 = Math.min(buf.length, end1);
     var res = [];
-    var i5 = start;
-    while(i5 < end1){
-        var firstByte = buf[i5];
+    var i4 = start;
+    while(i4 < end1){
+        var firstByte = buf[i4];
         var codePoint = null;
         var bytesPerSequence = firstByte > 239 ? 4 : firstByte > 223 ? 3 : firstByte > 191 ? 2 : 1;
-        if (i5 + bytesPerSequence <= end1) {
+        if (i4 + bytesPerSequence <= end1) {
             var secondByte, thirdByte, fourthByte, tempCodePoint;
             switch(bytesPerSequence){
                 case 1:
@@ -14158,7 +14158,7 @@ function utf8Slice1(buf, start, end1) {
                     }
                     break;
                 case 2:
-                    secondByte = buf[i5 + 1];
+                    secondByte = buf[i4 + 1];
                     if ((secondByte & 192) === 128) {
                         tempCodePoint = (firstByte & 31) << 6 | secondByte & 63;
                         if (tempCodePoint > 127) {
@@ -14167,8 +14167,8 @@ function utf8Slice1(buf, start, end1) {
                     }
                     break;
                 case 3:
-                    secondByte = buf[i5 + 1];
-                    thirdByte = buf[i5 + 2];
+                    secondByte = buf[i4 + 1];
+                    thirdByte = buf[i4 + 2];
                     if ((secondByte & 192) === 128 && (thirdByte & 192) === 128) {
                         tempCodePoint = (firstByte & 15) << 12 | (secondByte & 63) << 6 | thirdByte & 63;
                         if (tempCodePoint > 2047 && (tempCodePoint < 55296 || tempCodePoint > 57343)) {
@@ -14177,9 +14177,9 @@ function utf8Slice1(buf, start, end1) {
                     }
                     break;
                 case 4:
-                    secondByte = buf[i5 + 1];
-                    thirdByte = buf[i5 + 2];
-                    fourthByte = buf[i5 + 3];
+                    secondByte = buf[i4 + 1];
+                    thirdByte = buf[i4 + 2];
+                    fourthByte = buf[i4 + 3];
                     if ((secondByte & 192) === 128 && (thirdByte & 192) === 128 && (fourthByte & 192) === 128) {
                         tempCodePoint = (firstByte & 15) << 18 | (secondByte & 63) << 12 | (thirdByte & 63) << 6 | fourthByte & 63;
                         if (tempCodePoint > 65535 && tempCodePoint < 1114112) {
@@ -14197,7 +14197,7 @@ function utf8Slice1(buf, start, end1) {
             codePoint = 56320 | codePoint & 1023;
         }
         res.push(codePoint);
-        i5 += bytesPerSequence;
+        i4 += bytesPerSequence;
     }
     return decodeCodePointsArray1(res);
 }
@@ -14208,25 +14208,25 @@ function decodeCodePointsArray1(codePoints) {
         return String.fromCharCode.apply(String, codePoints);
     }
     var res = "";
-    var i5 = 0;
-    while(i5 < len){
-        res += String.fromCharCode.apply(String, codePoints.slice(i5, i5 += MAX_ARGUMENTS_LENGTH));
+    var i4 = 0;
+    while(i4 < len){
+        res += String.fromCharCode.apply(String, codePoints.slice(i4, i4 += MAX_ARGUMENTS_LENGTH));
     }
     return res;
 }
 function asciiSlice1(buf, start, end1) {
     var ret = "";
     end1 = Math.min(buf.length, end1);
-    for(var i5 = start; i5 < end1; ++i5){
-        ret += String.fromCharCode(buf[i5] & 127);
+    for(var i4 = start; i4 < end1; ++i4){
+        ret += String.fromCharCode(buf[i4] & 127);
     }
     return ret;
 }
 function latin1Slice1(buf, start, end1) {
     var ret = "";
     end1 = Math.min(buf.length, end1);
-    for(var i5 = start; i5 < end1; ++i5){
-        ret += String.fromCharCode(buf[i5]);
+    for(var i4 = start; i4 < end1; ++i4){
+        ret += String.fromCharCode(buf[i4]);
     }
     return ret;
 }
@@ -14235,16 +14235,16 @@ function hexSlice1(buf, start, end1) {
     if (!start || start < 0) start = 0;
     if (!end1 || end1 < 0 || end1 > len) end1 = len;
     var out = "";
-    for(var i5 = start; i5 < end1; ++i5){
-        out += toHex1(buf[i5]);
+    for(var i4 = start; i4 < end1; ++i4){
+        out += toHex1(buf[i4]);
     }
     return out;
 }
 function utf16leSlice1(buf, start, end1) {
     var bytes = buf.slice(start, end1);
     var res = "";
-    for(var i5 = 0; i5 < bytes.length; i5 += 2){
-        res += String.fromCharCode(bytes[i5] + bytes[i5 + 1] * 256);
+    for(var i4 = 0; i4 < bytes.length; i4 += 2){
+        res += String.fromCharCode(bytes[i4] + bytes[i4 + 1] * 256);
     }
     return res;
 }
@@ -14272,8 +14272,8 @@ Buffer2.prototype.slice = function slice(start, end1) {
     } else {
         var sliceLen = end1 - start;
         newBuf = new Buffer2(sliceLen, void 0);
-        for(var i5 = 0; i5 < sliceLen; ++i5){
-            newBuf[i5] = this[i5 + start];
+        for(var i4 = 0; i4 < sliceLen; ++i4){
+            newBuf[i4] = this[i4 + start];
         }
     }
     return newBuf;
@@ -14288,9 +14288,9 @@ Buffer2.prototype.readUIntLE = function readUIntLE(offset2, byteLength2, noAsser
     if (!noAssert) checkOffset(offset2, byteLength2, this.length);
     var val = this[offset2];
     var mul1 = 1;
-    var i6 = 0;
-    while((++i6) < byteLength2 && (mul1 *= 256)){
-        val += this[offset2 + i6] * mul1;
+    var i5 = 0;
+    while((++i5) < byteLength2 && (mul1 *= 256)){
+        val += this[offset2 + i5] * mul1;
     }
     return val;
 };
@@ -14333,9 +14333,9 @@ Buffer2.prototype.readIntLE = function readIntLE(offset2, byteLength2, noAssert)
     if (!noAssert) checkOffset(offset2, byteLength2, this.length);
     var val = this[offset2];
     var mul1 = 1;
-    var i6 = 0;
-    while((++i6) < byteLength2 && (mul1 *= 256)){
-        val += this[offset2 + i6] * mul1;
+    var i5 = 0;
+    while((++i5) < byteLength2 && (mul1 *= 256)){
+        val += this[offset2 + i5] * mul1;
     }
     mul1 *= 128;
     if (val >= mul1) val -= Math.pow(2, 8 * byteLength2);
@@ -14345,11 +14345,11 @@ Buffer2.prototype.readIntBE = function readIntBE(offset2, byteLength2, noAssert)
     offset2 = offset2 | 0;
     byteLength2 = byteLength2 | 0;
     if (!noAssert) checkOffset(offset2, byteLength2, this.length);
-    var i6 = byteLength2;
+    var i5 = byteLength2;
     var mul1 = 1;
-    var val = this[offset2 + --i6];
-    while(i6 > 0 && (mul1 *= 256)){
-        val += this[offset2 + --i6] * mul1;
+    var val = this[offset2 + --i5];
+    while(i5 > 0 && (mul1 *= 256)){
+        val += this[offset2 + --i5] * mul1;
     }
     mul1 *= 128;
     if (val >= mul1) val -= Math.pow(2, 8 * byteLength2);
@@ -14408,10 +14408,10 @@ Buffer2.prototype.writeUIntLE = function writeUIntLE(value, offset2, byteLength2
         checkInt(this, value, offset2, byteLength2, maxBytes, 0);
     }
     var mul1 = 1;
-    var i6 = 0;
+    var i5 = 0;
     this[offset2] = value & 255;
-    while((++i6) < byteLength2 && (mul1 *= 256)){
-        this[offset2 + i6] = value / mul1 & 255;
+    while((++i5) < byteLength2 && (mul1 *= 256)){
+        this[offset2 + i5] = value / mul1 & 255;
     }
     return offset2 + byteLength2;
 };
@@ -14423,11 +14423,11 @@ Buffer2.prototype.writeUIntBE = function writeUIntBE(value, offset2, byteLength2
         var maxBytes = Math.pow(2, 8 * byteLength2) - 1;
         checkInt(this, value, offset2, byteLength2, maxBytes, 0);
     }
-    var i6 = byteLength2 - 1;
+    var i5 = byteLength2 - 1;
     var mul1 = 1;
-    this[offset2 + i6] = value & 255;
-    while((--i6) >= 0 && (mul1 *= 256)){
-        this[offset2 + i6] = value / mul1 & 255;
+    this[offset2 + i5] = value & 255;
+    while((--i5) >= 0 && (mul1 *= 256)){
+        this[offset2 + i5] = value / mul1 & 255;
     }
     return offset2 + byteLength2;
 };
@@ -14441,8 +14441,8 @@ Buffer2.prototype.writeUInt8 = function writeUInt8(value, offset2, noAssert) {
 };
 function objectWriteUInt16(buf, value, offset2, littleEndian) {
     if (value < 0) value = 65535 + value + 1;
-    for(var i6 = 0, j = Math.min(buf.length - offset2, 2); i6 < j; ++i6){
-        buf[offset2 + i6] = (value & 255 << 8 * (littleEndian ? i6 : 1 - i6)) >>> (littleEndian ? i6 : 1 - i6) * 8;
+    for(var i5 = 0, j = Math.min(buf.length - offset2, 2); i5 < j; ++i5){
+        buf[offset2 + i5] = (value & 255 << 8 * (littleEndian ? i5 : 1 - i5)) >>> (littleEndian ? i5 : 1 - i5) * 8;
     }
 }
 Buffer2.prototype.writeUInt16LE = function writeUInt16LE(value, offset2, noAssert) {
@@ -14471,8 +14471,8 @@ Buffer2.prototype.writeUInt16BE = function writeUInt16BE(value, offset2, noAsser
 };
 function objectWriteUInt32(buf, value, offset2, littleEndian) {
     if (value < 0) value = 4294967295 + value + 1;
-    for(var i6 = 0, j = Math.min(buf.length - offset2, 4); i6 < j; ++i6){
-        buf[offset2 + i6] = value >>> (littleEndian ? i6 : 3 - i6) * 8 & 255;
+    for(var i5 = 0, j = Math.min(buf.length - offset2, 4); i5 < j; ++i5){
+        buf[offset2 + i5] = value >>> (littleEndian ? i5 : 3 - i5) * 8 & 255;
     }
 }
 Buffer2.prototype.writeUInt32LE = function writeUInt32LE(value, offset2, noAssert) {
@@ -14510,15 +14510,15 @@ Buffer2.prototype.writeIntLE = function writeIntLE(value, offset2, byteLength2, 
         var limit = Math.pow(2, 8 * byteLength2 - 1);
         checkInt(this, value, offset2, byteLength2, limit - 1, -limit);
     }
-    var i6 = 0;
+    var i5 = 0;
     var mul1 = 1;
     var sub1 = 0;
     this[offset2] = value & 255;
-    while((++i6) < byteLength2 && (mul1 *= 256)){
-        if (value < 0 && sub1 === 0 && this[offset2 + i6 - 1] !== 0) {
+    while((++i5) < byteLength2 && (mul1 *= 256)){
+        if (value < 0 && sub1 === 0 && this[offset2 + i5 - 1] !== 0) {
             sub1 = 1;
         }
-        this[offset2 + i6] = (value / mul1 >> 0) - sub1 & 255;
+        this[offset2 + i5] = (value / mul1 >> 0) - sub1 & 255;
     }
     return offset2 + byteLength2;
 };
@@ -14529,15 +14529,15 @@ Buffer2.prototype.writeIntBE = function writeIntBE(value, offset2, byteLength2, 
         var limit = Math.pow(2, 8 * byteLength2 - 1);
         checkInt(this, value, offset2, byteLength2, limit - 1, -limit);
     }
-    var i6 = byteLength2 - 1;
+    var i5 = byteLength2 - 1;
     var mul1 = 1;
     var sub1 = 0;
-    this[offset2 + i6] = value & 255;
-    while((--i6) >= 0 && (mul1 *= 256)){
-        if (value < 0 && sub1 === 0 && this[offset2 + i6 + 1] !== 0) {
+    this[offset2 + i5] = value & 255;
+    while((--i5) >= 0 && (mul1 *= 256)){
+        if (value < 0 && sub1 === 0 && this[offset2 + i5 + 1] !== 0) {
             sub1 = 1;
         }
-        this[offset2 + i6] = (value / mul1 >> 0) - sub1 & 255;
+        this[offset2 + i5] = (value / mul1 >> 0) - sub1 & 255;
     }
     return offset2 + byteLength2;
 };
@@ -14651,14 +14651,14 @@ Buffer2.prototype.copy = function copy1(target, targetStart, start, end1) {
         end1 = target.length - targetStart + start;
     }
     var len = end1 - start;
-    var i6;
+    var i5;
     if (this === target && start < targetStart && targetStart < end1) {
-        for(i6 = len - 1; i6 >= 0; --i6){
-            target[i6 + targetStart] = this[i6 + start];
+        for(i5 = len - 1; i5 >= 0; --i5){
+            target[i5 + targetStart] = this[i5 + start];
         }
     } else if (len < 1000 || !Buffer2.TYPED_ARRAY_SUPPORT) {
-        for(i6 = 0; i6 < len; ++i6){
-            target[i6 + targetStart] = this[i6 + start];
+        for(i5 = 0; i5 < len; ++i5){
+            target[i5 + targetStart] = this[i5 + start];
         }
     } else {
         Uint8Array.prototype.set.call(target, this.subarray(start, start + len), targetStart);
@@ -14699,16 +14699,16 @@ Buffer2.prototype.fill = function fill(val, start, end1, encoding) {
     start = start >>> 0;
     end1 = end1 === void 0 ? this.length : end1 >>> 0;
     if (!val) val = 0;
-    var i6;
+    var i5;
     if (typeof val === "number") {
-        for(i6 = start; i6 < end1; ++i6){
-            this[i6] = val;
+        for(i5 = start; i5 < end1; ++i5){
+            this[i5] = val;
         }
     } else {
         var bytes = internalIsBuffer1(val) ? val : utf8ToBytes1(new Buffer2(val, encoding).toString());
         var len = bytes.length;
-        for(i6 = 0; i6 < end1 - start; ++i6){
-            this[i6 + start] = bytes[i6 % len];
+        for(i5 = 0; i5 < end1 - start; ++i5){
+            this[i5 + start] = bytes[i5 % len];
         }
     }
     return this;
@@ -14736,14 +14736,14 @@ function utf8ToBytes1(string1, units) {
     var length1 = string1.length;
     var leadSurrogate = null;
     var bytes = [];
-    for(var i6 = 0; i6 < length1; ++i6){
-        codePoint = string1.charCodeAt(i6);
+    for(var i5 = 0; i5 < length1; ++i5){
+        codePoint = string1.charCodeAt(i5);
         if (codePoint > 55295 && codePoint < 57344) {
             if (!leadSurrogate) {
                 if (codePoint > 56319) {
                     if ((units -= 3) > -1) bytes.push(239, 191, 189);
                     continue;
-                } else if (i6 + 1 === length1) {
+                } else if (i5 + 1 === length1) {
                     if ((units -= 3) > -1) bytes.push(239, 191, 189);
                     continue;
                 }
@@ -14780,17 +14780,17 @@ function utf8ToBytes1(string1, units) {
 }
 function asciiToBytes1(str) {
     var byteArray = [];
-    for(var i6 = 0; i6 < str.length; ++i6){
-        byteArray.push(str.charCodeAt(i6) & 255);
+    for(var i5 = 0; i5 < str.length; ++i5){
+        byteArray.push(str.charCodeAt(i5) & 255);
     }
     return byteArray;
 }
 function utf16leToBytes1(str, units) {
     var c, hi, lo;
     var byteArray = [];
-    for(var i6 = 0; i6 < str.length; ++i6){
+    for(var i5 = 0; i5 < str.length; ++i5){
         if ((units -= 2) < 0) break;
-        c = str.charCodeAt(i6);
+        c = str.charCodeAt(i5);
         hi = c >> 8;
         lo = c % 256;
         byteArray.push(lo);
@@ -14802,11 +14802,11 @@ function base64ToBytes1(str) {
     return toByteArray(base64clean(str));
 }
 function blitBuffer1(src, dst, offset2, length1) {
-    for(var i6 = 0; i6 < length1; ++i6){
-        if (i6 + offset2 >= dst.length || i6 >= src.length) break;
-        dst[i6 + offset2] = src[i6];
+    for(var i5 = 0; i5 < length1; ++i5){
+        if (i5 + offset2 >= dst.length || i5 >= src.length) break;
+        dst[i5 + offset2] = src[i5];
     }
-    return i6;
+    return i5;
 }
 function isnan1(val) {
     return val !== val;
@@ -14977,16 +14977,16 @@ function StringDecoder(encoding) {
 StringDecoder.prototype.write = function(buf) {
     if (buf.length === 0) return "";
     var r;
-    var i6;
+    var i5;
     if (this.lastNeed) {
         r = this.fillLast(buf);
         if (r === void 0) return "";
-        i6 = this.lastNeed;
+        i5 = this.lastNeed;
         this.lastNeed = 0;
     } else {
-        i6 = 0;
+        i5 = 0;
     }
-    if (i6 < buf.length) return r ? r + this.text(buf, i6) : this.text(buf, i6);
+    if (i5 < buf.length) return r ? r + this.text(buf, i5) : this.text(buf, i5);
     return r || "";
 };
 StringDecoder.prototype.end = utf8End;
@@ -15006,21 +15006,21 @@ function utf8CheckByte(__byte) {
     else if (__byte >> 3 === 30) return 4;
     return __byte >> 6 === 2 ? -1 : -2;
 }
-function utf8CheckIncomplete(self, buf, i6) {
+function utf8CheckIncomplete(self, buf, i5) {
     var j = buf.length - 1;
-    if (j < i6) return 0;
+    if (j < i5) return 0;
     var nb = utf8CheckByte(buf[j]);
     if (nb >= 0) {
         if (nb > 0) self.lastNeed = nb - 1;
         return nb;
     }
-    if ((--j) < i6 || nb === -2) return 0;
+    if ((--j) < i5 || nb === -2) return 0;
     nb = utf8CheckByte(buf[j]);
     if (nb >= 0) {
         if (nb > 0) self.lastNeed = nb - 2;
         return nb;
     }
-    if ((--j) < i6 || nb === -2) return 0;
+    if ((--j) < i5 || nb === -2) return 0;
     nb = utf8CheckByte(buf[j]);
     if (nb >= 0) {
         if (nb > 0) {
@@ -15060,22 +15060,22 @@ function utf8FillLast(buf) {
     buf.copy(this.lastChar, p, 0, buf.length);
     this.lastNeed -= buf.length;
 }
-function utf8Text(buf, i6) {
-    var total = utf8CheckIncomplete(this, buf, i6);
-    if (!this.lastNeed) return buf.toString("utf8", i6);
+function utf8Text(buf, i5) {
+    var total = utf8CheckIncomplete(this, buf, i5);
+    if (!this.lastNeed) return buf.toString("utf8", i5);
     this.lastTotal = total;
     var end1 = buf.length - (total - this.lastNeed);
     buf.copy(this.lastChar, 0, end1);
-    return buf.toString("utf8", i6, end1);
+    return buf.toString("utf8", i5, end1);
 }
 function utf8End(buf) {
     var r = buf && buf.length ? this.write(buf) : "";
     if (this.lastNeed) return r + "\uFFFD";
     return r;
 }
-function utf16Text(buf, i6) {
-    if ((buf.length - i6) % 2 === 0) {
-        var r = buf.toString("utf16le", i6);
+function utf16Text(buf, i5) {
+    if ((buf.length - i5) % 2 === 0) {
+        var r = buf.toString("utf16le", i5);
         if (r) {
             var c = r.charCodeAt(r.length - 1);
             if (c >= 55296 && c <= 56319) {
@@ -15091,7 +15091,7 @@ function utf16Text(buf, i6) {
     this.lastNeed = 1;
     this.lastTotal = 2;
     this.lastChar[0] = buf[buf.length - 1];
-    return buf.toString("utf16le", i6, buf.length - 1);
+    return buf.toString("utf16le", i5, buf.length - 1);
 }
 function utf16End(buf) {
     var r = buf && buf.length ? this.write(buf) : "";
@@ -15101,9 +15101,9 @@ function utf16End(buf) {
     }
     return r;
 }
-function base64Text(buf, i6) {
-    var n1 = (buf.length - i6) % 3;
-    if (n1 === 0) return buf.toString("base64", i6);
+function base64Text(buf, i5) {
+    var n1 = (buf.length - i5) % 3;
+    if (n1 === 0) return buf.toString("base64", i5);
     this.lastNeed = 3 - n1;
     this.lastTotal = 3;
     if (n1 === 1) {
@@ -15112,7 +15112,7 @@ function base64Text(buf, i6) {
         this.lastChar[0] = buf[buf.length - 2];
         this.lastChar[1] = buf[buf.length - 1];
     }
-    return buf.toString("base64", i6, buf.length - n1);
+    return buf.toString("base64", i5, buf.length - n1);
 }
 function base64End(buf) {
     var r = buf && buf.length ? this.write(buf) : "";
@@ -15248,8 +15248,8 @@ function drainQueue1() {
 function nextTick(fun) {
     var args = new Array(arguments.length - 1);
     if (arguments.length > 1) {
-        for(var i6 = 1; i6 < arguments.length; i6++){
-            args[i6 - 1] = arguments[i6];
+        for(var i5 = 1; i5 < arguments.length; i5++){
+            args[i5 - 1] = arguments[i5];
         }
     }
     queue.push(new Item1(fun, args));
@@ -15392,7 +15392,7 @@ function emitNone(handler, isFn, self2) {
     else {
         var len = handler.length;
         var listeners2 = arrayClone(handler, len);
-        for(var i7 = 0; i7 < len; ++i7)listeners2[i7].call(self2);
+        for(var i6 = 0; i6 < len; ++i6)listeners2[i6].call(self2);
     }
 }
 function emitOne(handler, isFn, self2, arg1) {
@@ -15400,7 +15400,7 @@ function emitOne(handler, isFn, self2, arg1) {
     else {
         var len = handler.length;
         var listeners2 = arrayClone(handler, len);
-        for(var i8 = 0; i8 < len; ++i8)listeners2[i8].call(self2, arg1);
+        for(var i7 = 0; i7 < len; ++i7)listeners2[i7].call(self2, arg1);
     }
 }
 function emitTwo(handler, isFn, self2, arg1, arg2) {
@@ -15408,7 +15408,7 @@ function emitTwo(handler, isFn, self2, arg1, arg2) {
     else {
         var len = handler.length;
         var listeners2 = arrayClone(handler, len);
-        for(var i9 = 0; i9 < len; ++i9)listeners2[i9].call(self2, arg1, arg2);
+        for(var i8 = 0; i8 < len; ++i8)listeners2[i8].call(self2, arg1, arg2);
     }
 }
 function emitThree(handler, isFn, self2, arg1, arg2, arg3) {
@@ -15416,7 +15416,7 @@ function emitThree(handler, isFn, self2, arg1, arg2, arg3) {
     else {
         var len = handler.length;
         var listeners2 = arrayClone(handler, len);
-        for(var i10 = 0; i10 < len; ++i10)listeners2[i10].call(self2, arg1, arg2, arg3);
+        for(var i9 = 0; i9 < len; ++i9)listeners2[i9].call(self2, arg1, arg2, arg3);
     }
 }
 function emitMany(handler, isFn, self2, args) {
@@ -15424,11 +15424,11 @@ function emitMany(handler, isFn, self2, args) {
     else {
         var len = handler.length;
         var listeners2 = arrayClone(handler, len);
-        for(var i11 = 0; i11 < len; ++i11)listeners2[i11].apply(self2, args);
+        for(var i10 = 0; i10 < len; ++i10)listeners2[i10].apply(self2, args);
     }
 }
 EventEmitter.prototype.emit = function emit2(type2) {
-    var er, handler, len, args, i12, events2, domain2;
+    var er, handler, len, args, i11, events2, domain2;
     var doError = type2 === "error";
     events2 = this._events;
     if (events2) doError = doError && events2.error == null;
@@ -15470,7 +15470,7 @@ EventEmitter.prototype.emit = function emit2(type2) {
             break;
         default:
             args = new Array(len - 1);
-            for(i12 = 1; i12 < len; i12++)args[i12 - 1] = arguments[i12];
+            for(i11 = 1; i11 < len; i11++)args[i11 - 1] = arguments[i11];
             emitMany(handler, isFn, this, args);
     }
     return true;
@@ -15558,7 +15558,7 @@ EventEmitter.prototype.prependOnceListener = function prependOnceListener(type2,
     return this;
 };
 EventEmitter.prototype.removeListener = function removeListener2(type2, listener) {
-    var list, events2, position, i12, originalListener;
+    var list, events2, position, i11, originalListener;
     if (typeof listener !== "function") throw new TypeError('"listener" argument must be a function');
     events2 = this._events;
     if (!events2) return this;
@@ -15572,10 +15572,10 @@ EventEmitter.prototype.removeListener = function removeListener2(type2, listener
         }
     } else if (typeof list !== "function") {
         position = -1;
-        for(i12 = list.length; (i12--) > 0;){
-            if (list[i12] === listener || list[i12].listener && list[i12].listener === listener) {
-                originalListener = list[i12].listener;
-                position = i12;
+        for(i11 = list.length; (i11--) > 0;){
+            if (list[i11] === listener || list[i11].listener && list[i11].listener === listener) {
+                originalListener = list[i11].listener;
+                position = i11;
                 break;
             }
         }
@@ -15611,8 +15611,8 @@ EventEmitter.prototype.removeAllListeners = function removeAllListeners2(type2) 
     }
     if (arguments.length === 0) {
         var keys = Object.keys(events2);
-        for(var i12 = 0, key; i12 < keys.length; ++i12){
-            key = keys[i12];
+        for(var i11 = 0, key; i11 < keys.length; ++i11){
+            key = keys[i11];
             if (key === "removeListener") continue;
             this.removeAllListeners(key);
         }
@@ -15670,18 +15670,18 @@ EventEmitter.prototype.eventNames = function eventNames() {
     return this._eventsCount > 0 ? Reflect.ownKeys(this._events) : [];
 };
 function spliceOne(list, index4) {
-    for(var i13 = index4, k = i13 + 1, n1 = list.length; k < n1; i13 += 1, k += 1)list[i13] = list[k];
+    for(var i12 = index4, k = i12 + 1, n1 = list.length; k < n1; i12 += 1, k += 1)list[i12] = list[k];
     list.pop();
 }
-function arrayClone(arr, i13) {
-    var copy2 = new Array(i13);
-    while(i13--)copy2[i13] = arr[i13];
+function arrayClone(arr, i12) {
+    var copy2 = new Array(i12);
+    while(i12--)copy2[i12] = arr[i12];
     return copy2;
 }
 function unwrapListeners(arr) {
     var ret = new Array(arr.length);
-    for(var i13 = 0; i13 < ret.length; ++i13){
-        ret[i13] = arr[i13].listener || arr[i13];
+    for(var i12 = 0; i12 < ret.length; ++i12){
+        ret[i12] = arr[i12].listener || arr[i12];
     }
     return ret;
 }
@@ -15700,9 +15700,9 @@ var inited1 = false;
 function init2() {
     inited1 = true;
     var code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    for(var i13 = 0, len = code.length; i13 < len; ++i13){
-        lookup1[i13] = code[i13];
-        revLookup1[code.charCodeAt(i13)] = i13;
+    for(var i12 = 0, len = code.length; i12 < len; ++i12){
+        lookup1[i12] = code[i12];
+        revLookup1[code.charCodeAt(i12)] = i12;
     }
     revLookup1["-".charCodeAt(0)] = 62;
     revLookup1["_".charCodeAt(0)] = 63;
@@ -15711,7 +15711,7 @@ function toByteArray1(b64) {
     if (!inited1) {
         init2();
     }
-    var i13, j, l, tmp, placeHolders, arr;
+    var i12, j, l, tmp, placeHolders, arr;
     var len = b64.length;
     if (len % 4 > 0) {
         throw new Error("Invalid string. Length must be a multiple of 4");
@@ -15720,17 +15720,17 @@ function toByteArray1(b64) {
     arr = new Arr1(len * 3 / 4 - placeHolders);
     l = placeHolders > 0 ? len - 4 : len;
     var L = 0;
-    for(i13 = 0, j = 0; i13 < l; i13 += 4, j += 3){
-        tmp = revLookup1[b64.charCodeAt(i13)] << 18 | revLookup1[b64.charCodeAt(i13 + 1)] << 12 | revLookup1[b64.charCodeAt(i13 + 2)] << 6 | revLookup1[b64.charCodeAt(i13 + 3)];
+    for(i12 = 0, j = 0; i12 < l; i12 += 4, j += 3){
+        tmp = revLookup1[b64.charCodeAt(i12)] << 18 | revLookup1[b64.charCodeAt(i12 + 1)] << 12 | revLookup1[b64.charCodeAt(i12 + 2)] << 6 | revLookup1[b64.charCodeAt(i12 + 3)];
         arr[L++] = tmp >> 16 & 255;
         arr[L++] = tmp >> 8 & 255;
         arr[L++] = tmp & 255;
     }
     if (placeHolders === 2) {
-        tmp = revLookup1[b64.charCodeAt(i13)] << 2 | revLookup1[b64.charCodeAt(i13 + 1)] >> 4;
+        tmp = revLookup1[b64.charCodeAt(i12)] << 2 | revLookup1[b64.charCodeAt(i12 + 1)] >> 4;
         arr[L++] = tmp & 255;
     } else if (placeHolders === 1) {
-        tmp = revLookup1[b64.charCodeAt(i13)] << 10 | revLookup1[b64.charCodeAt(i13 + 1)] << 4 | revLookup1[b64.charCodeAt(i13 + 2)] >> 2;
+        tmp = revLookup1[b64.charCodeAt(i12)] << 10 | revLookup1[b64.charCodeAt(i12 + 1)] << 4 | revLookup1[b64.charCodeAt(i12 + 2)] >> 2;
         arr[L++] = tmp >> 8 & 255;
         arr[L++] = tmp & 255;
     }
@@ -15742,8 +15742,8 @@ function tripletToBase641(num) {
 function encodeChunk1(uint8, start, end2) {
     var tmp;
     var output = [];
-    for(var i13 = start; i13 < end2; i13 += 3){
-        tmp = (uint8[i13] << 16) + (uint8[i13 + 1] << 8) + uint8[i13 + 2];
+    for(var i12 = start; i12 < end2; i12 += 3){
+        tmp = (uint8[i12] << 16) + (uint8[i12 + 1] << 8) + uint8[i12 + 2];
         output.push(tripletToBase641(tmp));
     }
     return output.join("");
@@ -15758,8 +15758,8 @@ function fromByteArray1(uint8) {
     var output = "";
     var parts1 = [];
     var maxChunkLength = 16383;
-    for(var i13 = 0, len2 = len - extraBytes; i13 < len2; i13 += maxChunkLength){
-        parts1.push(encodeChunk1(uint8, i13, i13 + maxChunkLength > len2 ? len2 : i13 + maxChunkLength));
+    for(var i12 = 0, len2 = len - extraBytes; i12 < len2; i12 += maxChunkLength){
+        parts1.push(encodeChunk1(uint8, i12, i12 + maxChunkLength > len2 ? len2 : i12 + maxChunkLength));
     }
     if (extraBytes === 1) {
         tmp = uint8[len - 1];
@@ -15782,19 +15782,19 @@ function read1(buffer, offset2, isLE, mLen, nBytes) {
     var eMax = (1 << eLen) - 1;
     var eBias = eMax >> 1;
     var nBits = -7;
-    var i13 = isLE ? nBytes - 1 : 0;
+    var i12 = isLE ? nBytes - 1 : 0;
     var d = isLE ? -1 : 1;
-    var s = buffer[offset2 + i13];
-    i13 += d;
+    var s = buffer[offset2 + i12];
+    i12 += d;
     e = s & (1 << -nBits) - 1;
     s >>= -nBits;
     nBits += eLen;
-    for(; nBits > 0; e = e * 256 + buffer[offset2 + i13], i13 += d, nBits -= 8){
+    for(; nBits > 0; e = e * 256 + buffer[offset2 + i12], i12 += d, nBits -= 8){
     }
     m = e & (1 << -nBits) - 1;
     e >>= -nBits;
     nBits += mLen;
-    for(; nBits > 0; m = m * 256 + buffer[offset2 + i13], i13 += d, nBits -= 8){
+    for(; nBits > 0; m = m * 256 + buffer[offset2 + i12], i12 += d, nBits -= 8){
     }
     if (e === 0) {
         e = 1 - eBias;
@@ -15812,7 +15812,7 @@ function write1(buffer, value, offset2, isLE, mLen, nBytes) {
     var eMax = (1 << eLen) - 1;
     var eBias = eMax >> 1;
     var rt = mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0;
-    var i13 = isLE ? 0 : nBytes - 1;
+    var i12 = isLE ? 0 : nBytes - 1;
     var d = isLE ? 1 : -1;
     var s = value < 0 || value === 0 && 1 / value < 0 ? 1 : 0;
     value = Math.abs(value);
@@ -15845,13 +15845,13 @@ function write1(buffer, value, offset2, isLE, mLen, nBytes) {
             e = 0;
         }
     }
-    for(; mLen >= 8; buffer[offset2 + i13] = m & 255, i13 += d, m /= 256, mLen -= 8){
+    for(; mLen >= 8; buffer[offset2 + i12] = m & 255, i12 += d, m /= 256, mLen -= 8){
     }
     e = e << mLen | m;
     eLen += mLen;
-    for(; eLen > 0; buffer[offset2 + i13] = e & 255, i13 += d, e /= 256, eLen -= 8){
+    for(; eLen > 0; buffer[offset2 + i12] = e & 255, i12 += d, e /= 256, eLen -= 8){
     }
-    buffer[offset2 + i13 - d] |= s * 128;
+    buffer[offset2 + i12 - d] |= s * 128;
 }
 var toString1 = {
 }.toString;
@@ -15939,8 +15939,8 @@ function allocUnsafe2(that, size) {
     assertSize1(size);
     that = createBuffer1(that, size < 0 ? 0 : checked2(size) | 0);
     if (!Buffer3.TYPED_ARRAY_SUPPORT) {
-        for(var i13 = 0; i13 < size; ++i13){
-            that[i13] = 0;
+        for(var i12 = 0; i12 < size; ++i12){
+            that[i12] = 0;
         }
     }
     return that;
@@ -15969,8 +15969,8 @@ function fromString2(that, string1, encoding) {
 function fromArrayLike1(that, array) {
     var length1 = array.length < 0 ? 0 : checked2(array.length) | 0;
     that = createBuffer1(that, length1);
-    for(var i14 = 0; i14 < length1; i14 += 1){
-        that[i14] = array[i14] & 255;
+    for(var i13 = 0; i13 < length1; i13 += 1){
+        that[i13] = array[i13] & 255;
     }
     return that;
 }
@@ -16043,10 +16043,10 @@ Buffer3.compare = function compare1(a, b) {
     if (a === b) return 0;
     var x = a.length;
     var y = b.length;
-    for(var i14 = 0, len = Math.min(x, y); i14 < len; ++i14){
-        if (a[i14] !== b[i14]) {
-            x = a[i14];
-            y = b[i14];
+    for(var i13 = 0, len = Math.min(x, y); i13 < len; ++i13){
+        if (a[i13] !== b[i13]) {
+            x = a[i13];
+            y = b[i13];
             break;
         }
     }
@@ -16079,17 +16079,17 @@ Buffer3.concat = function concat1(list, length1) {
     if (list.length === 0) {
         return Buffer3.alloc(0);
     }
-    var i14;
+    var i13;
     if (length1 === void 0) {
         length1 = 0;
-        for(i14 = 0; i14 < list.length; ++i14){
-            length1 += list[i14].length;
+        for(i13 = 0; i13 < list.length; ++i13){
+            length1 += list[i13].length;
         }
     }
     var buffer = Buffer3.allocUnsafe(length1);
     var pos = 0;
-    for(i14 = 0; i14 < list.length; ++i14){
-        var buf = list[i14];
+    for(i13 = 0; i13 < list.length; ++i13){
+        var buf = list[i13];
         if (!internalIsBuffer2(buf)) {
             throw new TypeError('"list" argument must be an Array of Buffers');
         }
@@ -16186,17 +16186,17 @@ function slowToString1(encoding, start, end2) {
 }
 Buffer3.prototype._isBuffer = true;
 function swap1(b, n1, m) {
-    var i14 = b[n1];
+    var i13 = b[n1];
     b[n1] = b[m];
-    b[m] = i14;
+    b[m] = i13;
 }
 Buffer3.prototype.swap16 = function swap161() {
     var len = this.length;
     if (len % 2 !== 0) {
         throw new RangeError("Buffer size must be a multiple of 16-bits");
     }
-    for(var i14 = 0; i14 < len; i14 += 2){
-        swap1(this, i14, i14 + 1);
+    for(var i13 = 0; i13 < len; i13 += 2){
+        swap1(this, i13, i13 + 1);
     }
     return this;
 };
@@ -16205,9 +16205,9 @@ Buffer3.prototype.swap32 = function swap321() {
     if (len % 4 !== 0) {
         throw new RangeError("Buffer size must be a multiple of 32-bits");
     }
-    for(var i14 = 0; i14 < len; i14 += 4){
-        swap1(this, i14, i14 + 3);
-        swap1(this, i14 + 1, i14 + 2);
+    for(var i13 = 0; i13 < len; i13 += 4){
+        swap1(this, i13, i13 + 3);
+        swap1(this, i13 + 1, i13 + 2);
     }
     return this;
 };
@@ -16216,11 +16216,11 @@ Buffer3.prototype.swap64 = function swap641() {
     if (len % 8 !== 0) {
         throw new RangeError("Buffer size must be a multiple of 64-bits");
     }
-    for(var i14 = 0; i14 < len; i14 += 8){
-        swap1(this, i14, i14 + 7);
-        swap1(this, i14 + 1, i14 + 6);
-        swap1(this, i14 + 2, i14 + 5);
-        swap1(this, i14 + 3, i14 + 4);
+    for(var i13 = 0; i13 < len; i13 += 8){
+        swap1(this, i13, i13 + 7);
+        swap1(this, i13 + 1, i13 + 6);
+        swap1(this, i13 + 2, i13 + 5);
+        swap1(this, i13 + 3, i13 + 4);
     }
     return this;
 };
@@ -16282,10 +16282,10 @@ Buffer3.prototype.compare = function compare21(target, start, end2, thisStart, t
     var len = Math.min(x, y);
     var thisCopy = this.slice(thisStart, thisEnd);
     var targetCopy = target.slice(start, end2);
-    for(var i14 = 0; i14 < len; ++i14){
-        if (thisCopy[i14] !== targetCopy[i14]) {
-            x = thisCopy[i14];
-            y = targetCopy[i14];
+    for(var i13 = 0; i13 < len; ++i13){
+        if (thisCopy[i13] !== targetCopy[i13]) {
+            x = thisCopy[i13];
+            y = targetCopy[i13];
             break;
         }
     }
@@ -16361,29 +16361,29 @@ function arrayIndexOf2(arr, val, byteOffset, encoding, dir) {
             return buf.readUInt16BE(i21 * indexSize);
         }
     }
-    var i14;
+    var i13;
     if (dir) {
         var foundIndex = -1;
-        for(i14 = byteOffset; i14 < arrLength; i14++){
-            if (read2(arr, i14) === read2(val, foundIndex === -1 ? 0 : i14 - foundIndex)) {
-                if (foundIndex === -1) foundIndex = i14;
-                if (i14 - foundIndex + 1 === valLength) return foundIndex * indexSize;
+        for(i13 = byteOffset; i13 < arrLength; i13++){
+            if (read2(arr, i13) === read2(val, foundIndex === -1 ? 0 : i13 - foundIndex)) {
+                if (foundIndex === -1) foundIndex = i13;
+                if (i13 - foundIndex + 1 === valLength) return foundIndex * indexSize;
             } else {
-                if (foundIndex !== -1) i14 -= i14 - foundIndex;
+                if (foundIndex !== -1) i13 -= i13 - foundIndex;
                 foundIndex = -1;
             }
         }
     } else {
         if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength;
-        for(i14 = byteOffset; i14 >= 0; i14--){
+        for(i13 = byteOffset; i13 >= 0; i13--){
             var found = true;
             for(var j = 0; j < valLength; j++){
-                if (read2(arr, i14 + j) !== read2(val, j)) {
+                if (read2(arr, i13 + j) !== read2(val, j)) {
                     found = false;
                     break;
                 }
             }
-            if (found) return i14;
+            if (found) return i13;
         }
     }
     return -1;
@@ -16413,12 +16413,12 @@ function hexWrite1(buf, string1, offset2, length1) {
     if (length1 > strLen / 2) {
         length1 = strLen / 2;
     }
-    for(var i14 = 0; i14 < length1; ++i14){
-        var parsed = parseInt(string1.substr(i14 * 2, 2), 16);
-        if (isNaN(parsed)) return i14;
-        buf[offset2 + i14] = parsed;
+    for(var i13 = 0; i13 < length1; ++i13){
+        var parsed = parseInt(string1.substr(i13 * 2, 2), 16);
+        if (isNaN(parsed)) return i13;
+        buf[offset2 + i13] = parsed;
     }
-    return i14;
+    return i13;
 }
 function utf8Write1(buf, string1, offset2, length1) {
     return blitBuffer2(utf8ToBytes2(string1, buf.length - offset2), buf, offset2, length1);
@@ -16505,12 +16505,12 @@ function base64Slice2(buf, start, end2) {
 function utf8Slice2(buf, start, end2) {
     end2 = Math.min(buf.length, end2);
     var res = [];
-    var i14 = start;
-    while(i14 < end2){
-        var firstByte = buf[i14];
+    var i13 = start;
+    while(i13 < end2){
+        var firstByte = buf[i13];
         var codePoint = null;
         var bytesPerSequence = firstByte > 239 ? 4 : firstByte > 223 ? 3 : firstByte > 191 ? 2 : 1;
-        if (i14 + bytesPerSequence <= end2) {
+        if (i13 + bytesPerSequence <= end2) {
             var secondByte, thirdByte, fourthByte, tempCodePoint;
             switch(bytesPerSequence){
                 case 1:
@@ -16519,7 +16519,7 @@ function utf8Slice2(buf, start, end2) {
                     }
                     break;
                 case 2:
-                    secondByte = buf[i14 + 1];
+                    secondByte = buf[i13 + 1];
                     if ((secondByte & 192) === 128) {
                         tempCodePoint = (firstByte & 31) << 6 | secondByte & 63;
                         if (tempCodePoint > 127) {
@@ -16528,8 +16528,8 @@ function utf8Slice2(buf, start, end2) {
                     }
                     break;
                 case 3:
-                    secondByte = buf[i14 + 1];
-                    thirdByte = buf[i14 + 2];
+                    secondByte = buf[i13 + 1];
+                    thirdByte = buf[i13 + 2];
                     if ((secondByte & 192) === 128 && (thirdByte & 192) === 128) {
                         tempCodePoint = (firstByte & 15) << 12 | (secondByte & 63) << 6 | thirdByte & 63;
                         if (tempCodePoint > 2047 && (tempCodePoint < 55296 || tempCodePoint > 57343)) {
@@ -16538,9 +16538,9 @@ function utf8Slice2(buf, start, end2) {
                     }
                     break;
                 case 4:
-                    secondByte = buf[i14 + 1];
-                    thirdByte = buf[i14 + 2];
-                    fourthByte = buf[i14 + 3];
+                    secondByte = buf[i13 + 1];
+                    thirdByte = buf[i13 + 2];
+                    fourthByte = buf[i13 + 3];
                     if ((secondByte & 192) === 128 && (thirdByte & 192) === 128 && (fourthByte & 192) === 128) {
                         tempCodePoint = (firstByte & 15) << 18 | (secondByte & 63) << 12 | (thirdByte & 63) << 6 | fourthByte & 63;
                         if (tempCodePoint > 65535 && tempCodePoint < 1114112) {
@@ -16558,7 +16558,7 @@ function utf8Slice2(buf, start, end2) {
             codePoint = 56320 | codePoint & 1023;
         }
         res.push(codePoint);
-        i14 += bytesPerSequence;
+        i13 += bytesPerSequence;
     }
     return decodeCodePointsArray2(res);
 }
@@ -16569,25 +16569,25 @@ function decodeCodePointsArray2(codePoints) {
         return String.fromCharCode.apply(String, codePoints);
     }
     var res = "";
-    var i14 = 0;
-    while(i14 < len){
-        res += String.fromCharCode.apply(String, codePoints.slice(i14, i14 += MAX_ARGUMENTS_LENGTH1));
+    var i13 = 0;
+    while(i13 < len){
+        res += String.fromCharCode.apply(String, codePoints.slice(i13, i13 += MAX_ARGUMENTS_LENGTH1));
     }
     return res;
 }
 function asciiSlice2(buf, start, end2) {
     var ret = "";
     end2 = Math.min(buf.length, end2);
-    for(var i14 = start; i14 < end2; ++i14){
-        ret += String.fromCharCode(buf[i14] & 127);
+    for(var i13 = start; i13 < end2; ++i13){
+        ret += String.fromCharCode(buf[i13] & 127);
     }
     return ret;
 }
 function latin1Slice2(buf, start, end2) {
     var ret = "";
     end2 = Math.min(buf.length, end2);
-    for(var i14 = start; i14 < end2; ++i14){
-        ret += String.fromCharCode(buf[i14]);
+    for(var i13 = start; i13 < end2; ++i13){
+        ret += String.fromCharCode(buf[i13]);
     }
     return ret;
 }
@@ -16596,16 +16596,16 @@ function hexSlice2(buf, start, end2) {
     if (!start || start < 0) start = 0;
     if (!end2 || end2 < 0 || end2 > len) end2 = len;
     var out = "";
-    for(var i14 = start; i14 < end2; ++i14){
-        out += toHex2(buf[i14]);
+    for(var i13 = start; i13 < end2; ++i13){
+        out += toHex2(buf[i13]);
     }
     return out;
 }
 function utf16leSlice2(buf, start, end2) {
     var bytes = buf.slice(start, end2);
     var res = "";
-    for(var i14 = 0; i14 < bytes.length; i14 += 2){
-        res += String.fromCharCode(bytes[i14] + bytes[i14 + 1] * 256);
+    for(var i13 = 0; i13 < bytes.length; i13 += 2){
+        res += String.fromCharCode(bytes[i13] + bytes[i13 + 1] * 256);
     }
     return res;
 }
@@ -16633,8 +16633,8 @@ Buffer3.prototype.slice = function slice1(start, end2) {
     } else {
         var sliceLen = end2 - start;
         newBuf = new Buffer3(sliceLen, void 0);
-        for(var i14 = 0; i14 < sliceLen; ++i14){
-            newBuf[i14] = this[i14 + start];
+        for(var i13 = 0; i13 < sliceLen; ++i13){
+            newBuf[i13] = this[i13 + start];
         }
     }
     return newBuf;
@@ -16649,9 +16649,9 @@ Buffer3.prototype.readUIntLE = function readUIntLE1(offset2, byteLength21, noAss
     if (!noAssert) checkOffset1(offset2, byteLength21, this.length);
     var val = this[offset2];
     var mul1 = 1;
-    var i15 = 0;
-    while((++i15) < byteLength21 && (mul1 *= 256)){
-        val += this[offset2 + i15] * mul1;
+    var i14 = 0;
+    while((++i14) < byteLength21 && (mul1 *= 256)){
+        val += this[offset2 + i14] * mul1;
     }
     return val;
 };
@@ -16694,9 +16694,9 @@ Buffer3.prototype.readIntLE = function readIntLE1(offset2, byteLength21, noAsser
     if (!noAssert) checkOffset1(offset2, byteLength21, this.length);
     var val = this[offset2];
     var mul1 = 1;
-    var i15 = 0;
-    while((++i15) < byteLength21 && (mul1 *= 256)){
-        val += this[offset2 + i15] * mul1;
+    var i14 = 0;
+    while((++i14) < byteLength21 && (mul1 *= 256)){
+        val += this[offset2 + i14] * mul1;
     }
     mul1 *= 128;
     if (val >= mul1) val -= Math.pow(2, 8 * byteLength21);
@@ -16706,11 +16706,11 @@ Buffer3.prototype.readIntBE = function readIntBE1(offset2, byteLength21, noAsser
     offset2 = offset2 | 0;
     byteLength21 = byteLength21 | 0;
     if (!noAssert) checkOffset1(offset2, byteLength21, this.length);
-    var i15 = byteLength21;
+    var i14 = byteLength21;
     var mul1 = 1;
-    var val = this[offset2 + --i15];
-    while(i15 > 0 && (mul1 *= 256)){
-        val += this[offset2 + --i15] * mul1;
+    var val = this[offset2 + --i14];
+    while(i14 > 0 && (mul1 *= 256)){
+        val += this[offset2 + --i14] * mul1;
     }
     mul1 *= 128;
     if (val >= mul1) val -= Math.pow(2, 8 * byteLength21);
@@ -16769,10 +16769,10 @@ Buffer3.prototype.writeUIntLE = function writeUIntLE1(value, offset2, byteLength
         checkInt1(this, value, offset2, byteLength21, maxBytes, 0);
     }
     var mul1 = 1;
-    var i15 = 0;
+    var i14 = 0;
     this[offset2] = value & 255;
-    while((++i15) < byteLength21 && (mul1 *= 256)){
-        this[offset2 + i15] = value / mul1 & 255;
+    while((++i14) < byteLength21 && (mul1 *= 256)){
+        this[offset2 + i14] = value / mul1 & 255;
     }
     return offset2 + byteLength21;
 };
@@ -16784,11 +16784,11 @@ Buffer3.prototype.writeUIntBE = function writeUIntBE1(value, offset2, byteLength
         var maxBytes = Math.pow(2, 8 * byteLength21) - 1;
         checkInt1(this, value, offset2, byteLength21, maxBytes, 0);
     }
-    var i15 = byteLength21 - 1;
+    var i14 = byteLength21 - 1;
     var mul1 = 1;
-    this[offset2 + i15] = value & 255;
-    while((--i15) >= 0 && (mul1 *= 256)){
-        this[offset2 + i15] = value / mul1 & 255;
+    this[offset2 + i14] = value & 255;
+    while((--i14) >= 0 && (mul1 *= 256)){
+        this[offset2 + i14] = value / mul1 & 255;
     }
     return offset2 + byteLength21;
 };
@@ -16802,8 +16802,8 @@ Buffer3.prototype.writeUInt8 = function writeUInt81(value, offset2, noAssert) {
 };
 function objectWriteUInt161(buf, value, offset2, littleEndian) {
     if (value < 0) value = 65535 + value + 1;
-    for(var i15 = 0, j = Math.min(buf.length - offset2, 2); i15 < j; ++i15){
-        buf[offset2 + i15] = (value & 255 << 8 * (littleEndian ? i15 : 1 - i15)) >>> (littleEndian ? i15 : 1 - i15) * 8;
+    for(var i14 = 0, j = Math.min(buf.length - offset2, 2); i14 < j; ++i14){
+        buf[offset2 + i14] = (value & 255 << 8 * (littleEndian ? i14 : 1 - i14)) >>> (littleEndian ? i14 : 1 - i14) * 8;
     }
 }
 Buffer3.prototype.writeUInt16LE = function writeUInt16LE1(value, offset2, noAssert) {
@@ -16832,8 +16832,8 @@ Buffer3.prototype.writeUInt16BE = function writeUInt16BE1(value, offset2, noAsse
 };
 function objectWriteUInt321(buf, value, offset2, littleEndian) {
     if (value < 0) value = 4294967295 + value + 1;
-    for(var i15 = 0, j = Math.min(buf.length - offset2, 4); i15 < j; ++i15){
-        buf[offset2 + i15] = value >>> (littleEndian ? i15 : 3 - i15) * 8 & 255;
+    for(var i14 = 0, j = Math.min(buf.length - offset2, 4); i14 < j; ++i14){
+        buf[offset2 + i14] = value >>> (littleEndian ? i14 : 3 - i14) * 8 & 255;
     }
 }
 Buffer3.prototype.writeUInt32LE = function writeUInt32LE1(value, offset2, noAssert) {
@@ -16871,15 +16871,15 @@ Buffer3.prototype.writeIntLE = function writeIntLE1(value, offset2, byteLength21
         var limit = Math.pow(2, 8 * byteLength21 - 1);
         checkInt1(this, value, offset2, byteLength21, limit - 1, -limit);
     }
-    var i15 = 0;
+    var i14 = 0;
     var mul1 = 1;
     var sub1 = 0;
     this[offset2] = value & 255;
-    while((++i15) < byteLength21 && (mul1 *= 256)){
-        if (value < 0 && sub1 === 0 && this[offset2 + i15 - 1] !== 0) {
+    while((++i14) < byteLength21 && (mul1 *= 256)){
+        if (value < 0 && sub1 === 0 && this[offset2 + i14 - 1] !== 0) {
             sub1 = 1;
         }
-        this[offset2 + i15] = (value / mul1 >> 0) - sub1 & 255;
+        this[offset2 + i14] = (value / mul1 >> 0) - sub1 & 255;
     }
     return offset2 + byteLength21;
 };
@@ -16890,15 +16890,15 @@ Buffer3.prototype.writeIntBE = function writeIntBE1(value, offset2, byteLength21
         var limit = Math.pow(2, 8 * byteLength21 - 1);
         checkInt1(this, value, offset2, byteLength21, limit - 1, -limit);
     }
-    var i15 = byteLength21 - 1;
+    var i14 = byteLength21 - 1;
     var mul1 = 1;
     var sub1 = 0;
-    this[offset2 + i15] = value & 255;
-    while((--i15) >= 0 && (mul1 *= 256)){
-        if (value < 0 && sub1 === 0 && this[offset2 + i15 + 1] !== 0) {
+    this[offset2 + i14] = value & 255;
+    while((--i14) >= 0 && (mul1 *= 256)){
+        if (value < 0 && sub1 === 0 && this[offset2 + i14 + 1] !== 0) {
             sub1 = 1;
         }
-        this[offset2 + i15] = (value / mul1 >> 0) - sub1 & 255;
+        this[offset2 + i14] = (value / mul1 >> 0) - sub1 & 255;
     }
     return offset2 + byteLength21;
 };
@@ -17012,14 +17012,14 @@ Buffer3.prototype.copy = function copy2(target, targetStart, start, end2) {
         end2 = target.length - targetStart + start;
     }
     var len = end2 - start;
-    var i15;
+    var i14;
     if (this === target && start < targetStart && targetStart < end2) {
-        for(i15 = len - 1; i15 >= 0; --i15){
-            target[i15 + targetStart] = this[i15 + start];
+        for(i14 = len - 1; i14 >= 0; --i14){
+            target[i14 + targetStart] = this[i14 + start];
         }
     } else if (len < 1000 || !Buffer3.TYPED_ARRAY_SUPPORT) {
-        for(i15 = 0; i15 < len; ++i15){
-            target[i15 + targetStart] = this[i15 + start];
+        for(i14 = 0; i14 < len; ++i14){
+            target[i14 + targetStart] = this[i14 + start];
         }
     } else {
         Uint8Array.prototype.set.call(target, this.subarray(start, start + len), targetStart);
@@ -17060,16 +17060,16 @@ Buffer3.prototype.fill = function fill1(val, start, end2, encoding) {
     start = start >>> 0;
     end2 = end2 === void 0 ? this.length : end2 >>> 0;
     if (!val) val = 0;
-    var i15;
+    var i14;
     if (typeof val === "number") {
-        for(i15 = start; i15 < end2; ++i15){
-            this[i15] = val;
+        for(i14 = start; i14 < end2; ++i14){
+            this[i14] = val;
         }
     } else {
         var bytes = internalIsBuffer2(val) ? val : utf8ToBytes2(new Buffer3(val, encoding).toString());
         var len = bytes.length;
-        for(i15 = 0; i15 < end2 - start; ++i15){
-            this[i15 + start] = bytes[i15 % len];
+        for(i14 = 0; i14 < end2 - start; ++i14){
+            this[i14 + start] = bytes[i14 % len];
         }
     }
     return this;
@@ -17097,14 +17097,14 @@ function utf8ToBytes2(string1, units) {
     var length1 = string1.length;
     var leadSurrogate = null;
     var bytes = [];
-    for(var i15 = 0; i15 < length1; ++i15){
-        codePoint = string1.charCodeAt(i15);
+    for(var i14 = 0; i14 < length1; ++i14){
+        codePoint = string1.charCodeAt(i14);
         if (codePoint > 55295 && codePoint < 57344) {
             if (!leadSurrogate) {
                 if (codePoint > 56319) {
                     if ((units -= 3) > -1) bytes.push(239, 191, 189);
                     continue;
-                } else if (i15 + 1 === length1) {
+                } else if (i14 + 1 === length1) {
                     if ((units -= 3) > -1) bytes.push(239, 191, 189);
                     continue;
                 }
@@ -17141,17 +17141,17 @@ function utf8ToBytes2(string1, units) {
 }
 function asciiToBytes2(str) {
     var byteArray = [];
-    for(var i15 = 0; i15 < str.length; ++i15){
-        byteArray.push(str.charCodeAt(i15) & 255);
+    for(var i14 = 0; i14 < str.length; ++i14){
+        byteArray.push(str.charCodeAt(i14) & 255);
     }
     return byteArray;
 }
 function utf16leToBytes2(str, units) {
     var c, hi, lo;
     var byteArray = [];
-    for(var i15 = 0; i15 < str.length; ++i15){
+    for(var i14 = 0; i14 < str.length; ++i14){
         if ((units -= 2) < 0) break;
-        c = str.charCodeAt(i15);
+        c = str.charCodeAt(i14);
         hi = c >> 8;
         lo = c % 256;
         byteArray.push(lo);
@@ -17163,11 +17163,11 @@ function base64ToBytes2(str) {
     return toByteArray1(base64clean1(str));
 }
 function blitBuffer2(src, dst, offset2, length1) {
-    for(var i15 = 0; i15 < length1; ++i15){
-        if (i15 + offset2 >= dst.length || i15 >= src.length) break;
-        dst[i15 + offset2] = src[i15];
+    for(var i14 = 0; i14 < length1; ++i14){
+        if (i14 + offset2 >= dst.length || i14 >= src.length) break;
+        dst[i14 + offset2] = src[i14];
     }
-    return i15;
+    return i14;
 }
 function isnan2(val) {
     return val !== val;
@@ -17208,10 +17208,10 @@ function ownKeys(object, enumerableOnly) {
     return keys;
 }
 function _objectSpread(target) {
-    for(var i15 = 1; i15 < arguments.length; i15++){
-        var source = arguments[i15] != null ? arguments[i15] : {
+    for(var i14 = 1; i14 < arguments.length; i14++){
+        var source = arguments[i14] != null ? arguments[i14] : {
         };
-        if (i15 % 2) {
+        if (i14 % 2) {
             ownKeys(Object(source), true).forEach(function(key) {
                 _defineProperty(target, key, source[key]);
             });
@@ -17244,8 +17244,8 @@ function _classCallCheck(instance, Constructor) {
     }
 }
 function _defineProperties(target, props) {
-    for(var i15 = 0; i15 < props.length; i15++){
-        var descriptor = props[i15];
+    for(var i14 = 0; i14 < props.length; i14++){
+        var descriptor = props[i14];
         descriptor.enumerable = descriptor.enumerable || false;
         descriptor.configurable = true;
         if ("value" in descriptor) descriptor.writable = true;
@@ -17332,10 +17332,10 @@ var buffer_list = function() {
                 if (this.length === 0) return Buffer$1.alloc(0);
                 var ret = Buffer$1.allocUnsafe(n1 >>> 0);
                 var p = this.head;
-                var i15 = 0;
+                var i14 = 0;
                 while(p){
-                    copyBuffer(p.data, ret, i15);
-                    i15 += p.data.length;
+                    copyBuffer(p.data, ret, i14);
+                    i14 += p.data.length;
                     p = p.next;
                 }
                 return ret;
@@ -17549,8 +17549,8 @@ function createErrorType(code, message, Base) {
 function oneOf(expected, thing) {
     if (Array.isArray(expected)) {
         var len = expected.length;
-        expected = expected.map(function(i15) {
-            return String(i15);
+        expected = expected.map(function(i14) {
+            return String(i14);
         });
         if (len > 2) {
             return "one of ".concat(thing, " ").concat(expected.slice(0, len - 1).join(", "), ", or ") + expected[len - 1];
@@ -18902,8 +18902,8 @@ Readable.prototype.unpipe = function(dest) {
         state2.pipes = null;
         state2.pipesCount = 0;
         state2.flowing = false;
-        for(var i15 = 0; i15 < len; i15++){
-            dests[i15].emit("unpipe", this, {
+        for(var i14 = 0; i14 < len; i14++){
+            dests[i14].emit("unpipe", this, {
                 hasUnpiped: false
             });
         }
@@ -19031,13 +19031,13 @@ Readable.prototype.wrap = function(stream) {
             stream.pause();
         }
     });
-    for(var i16 in stream){
-        if (this[i16] === void 0 && typeof stream[i16] === "function") {
-            this[i16] = (function methodWrap(method) {
+    for(var i15 in stream){
+        if (this[i15] === void 0 && typeof stream[i15] === "function") {
+            this[i15] = (function methodWrap(method) {
                 return function methodWrapReturnFunction() {
                     return stream[method].apply(stream, arguments);
                 };
-            })(i16);
+            })(i15);
         }
     }
     for(var n1 = 0; n1 < kProxyEvents.length; n1++){
@@ -19135,8 +19135,8 @@ if (typeof Symbol === "function") {
     };
 }
 function indexOf2(xs, x) {
-    for(var i16 = 0, l = xs.length; i16 < l; i16++){
-        if (xs[i16] === x) return i16;
+    for(var i15 = 0, l = xs.length; i15 < l; i15++){
+        if (xs[i15] === x) return i15;
     }
     return -1;
 }
@@ -19298,9 +19298,9 @@ function pipeline() {
         throw new ERR_MISSING_ARGS("streams");
     }
     var error;
-    var destroys = streams.map(function(stream, i16) {
-        var reading = i16 < streams.length - 1;
-        var writing = i16 > 0;
+    var destroys = streams.map(function(stream, i15) {
+        var reading = i15 < streams.length - 1;
+        var writing = i15 > 0;
         return destroyer(stream, reading, writing, function(err) {
             if (!error) error = err;
             if (err) destroys.forEach(call);
@@ -19332,9 +19332,9 @@ var inited2 = false;
 function init3() {
     inited2 = true;
     var code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    for(var i16 = 0, len = code.length; i16 < len; ++i16){
-        lookup2[i16] = code[i16];
-        revLookup2[code.charCodeAt(i16)] = i16;
+    for(var i15 = 0, len = code.length; i15 < len; ++i15){
+        lookup2[i15] = code[i15];
+        revLookup2[code.charCodeAt(i15)] = i15;
     }
     revLookup2["-".charCodeAt(0)] = 62;
     revLookup2["_".charCodeAt(0)] = 63;
@@ -19343,7 +19343,7 @@ function toByteArray2(b64) {
     if (!inited2) {
         init3();
     }
-    var i16, j, l, tmp, placeHolders, arr;
+    var i15, j, l, tmp, placeHolders, arr;
     var len = b64.length;
     if (len % 4 > 0) {
         throw new Error("Invalid string. Length must be a multiple of 4");
@@ -19352,17 +19352,17 @@ function toByteArray2(b64) {
     arr = new Arr2(len * 3 / 4 - placeHolders);
     l = placeHolders > 0 ? len - 4 : len;
     var L = 0;
-    for(i16 = 0, j = 0; i16 < l; i16 += 4, j += 3){
-        tmp = revLookup2[b64.charCodeAt(i16)] << 18 | revLookup2[b64.charCodeAt(i16 + 1)] << 12 | revLookup2[b64.charCodeAt(i16 + 2)] << 6 | revLookup2[b64.charCodeAt(i16 + 3)];
+    for(i15 = 0, j = 0; i15 < l; i15 += 4, j += 3){
+        tmp = revLookup2[b64.charCodeAt(i15)] << 18 | revLookup2[b64.charCodeAt(i15 + 1)] << 12 | revLookup2[b64.charCodeAt(i15 + 2)] << 6 | revLookup2[b64.charCodeAt(i15 + 3)];
         arr[L++] = tmp >> 16 & 255;
         arr[L++] = tmp >> 8 & 255;
         arr[L++] = tmp & 255;
     }
     if (placeHolders === 2) {
-        tmp = revLookup2[b64.charCodeAt(i16)] << 2 | revLookup2[b64.charCodeAt(i16 + 1)] >> 4;
+        tmp = revLookup2[b64.charCodeAt(i15)] << 2 | revLookup2[b64.charCodeAt(i15 + 1)] >> 4;
         arr[L++] = tmp & 255;
     } else if (placeHolders === 1) {
-        tmp = revLookup2[b64.charCodeAt(i16)] << 10 | revLookup2[b64.charCodeAt(i16 + 1)] << 4 | revLookup2[b64.charCodeAt(i16 + 2)] >> 2;
+        tmp = revLookup2[b64.charCodeAt(i15)] << 10 | revLookup2[b64.charCodeAt(i15 + 1)] << 4 | revLookup2[b64.charCodeAt(i15 + 2)] >> 2;
         arr[L++] = tmp >> 8 & 255;
         arr[L++] = tmp & 255;
     }
@@ -19374,8 +19374,8 @@ function tripletToBase642(num) {
 function encodeChunk2(uint8, start, end2) {
     var tmp;
     var output = [];
-    for(var i16 = start; i16 < end2; i16 += 3){
-        tmp = (uint8[i16] << 16) + (uint8[i16 + 1] << 8) + uint8[i16 + 2];
+    for(var i15 = start; i15 < end2; i15 += 3){
+        tmp = (uint8[i15] << 16) + (uint8[i15 + 1] << 8) + uint8[i15 + 2];
         output.push(tripletToBase642(tmp));
     }
     return output.join("");
@@ -19390,8 +19390,8 @@ function fromByteArray2(uint8) {
     var output = "";
     var parts1 = [];
     var maxChunkLength = 16383;
-    for(var i16 = 0, len2 = len - extraBytes; i16 < len2; i16 += maxChunkLength){
-        parts1.push(encodeChunk2(uint8, i16, i16 + maxChunkLength > len2 ? len2 : i16 + maxChunkLength));
+    for(var i15 = 0, len2 = len - extraBytes; i15 < len2; i15 += maxChunkLength){
+        parts1.push(encodeChunk2(uint8, i15, i15 + maxChunkLength > len2 ? len2 : i15 + maxChunkLength));
     }
     if (extraBytes === 1) {
         tmp = uint8[len - 1];
@@ -19414,19 +19414,19 @@ function read2(buffer, offset2, isLE, mLen, nBytes) {
     var eMax = (1 << eLen) - 1;
     var eBias = eMax >> 1;
     var nBits = -7;
-    var i16 = isLE ? nBytes - 1 : 0;
+    var i15 = isLE ? nBytes - 1 : 0;
     var d = isLE ? -1 : 1;
-    var s = buffer[offset2 + i16];
-    i16 += d;
+    var s = buffer[offset2 + i15];
+    i15 += d;
     e = s & (1 << -nBits) - 1;
     s >>= -nBits;
     nBits += eLen;
-    for(; nBits > 0; e = e * 256 + buffer[offset2 + i16], i16 += d, nBits -= 8){
+    for(; nBits > 0; e = e * 256 + buffer[offset2 + i15], i15 += d, nBits -= 8){
     }
     m = e & (1 << -nBits) - 1;
     e >>= -nBits;
     nBits += mLen;
-    for(; nBits > 0; m = m * 256 + buffer[offset2 + i16], i16 += d, nBits -= 8){
+    for(; nBits > 0; m = m * 256 + buffer[offset2 + i15], i15 += d, nBits -= 8){
     }
     if (e === 0) {
         e = 1 - eBias;
@@ -19444,7 +19444,7 @@ function write3(buffer, value, offset2, isLE, mLen, nBytes) {
     var eMax = (1 << eLen) - 1;
     var eBias = eMax >> 1;
     var rt = mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0;
-    var i16 = isLE ? 0 : nBytes - 1;
+    var i15 = isLE ? 0 : nBytes - 1;
     var d = isLE ? 1 : -1;
     var s = value < 0 || value === 0 && 1 / value < 0 ? 1 : 0;
     value = Math.abs(value);
@@ -19477,13 +19477,13 @@ function write3(buffer, value, offset2, isLE, mLen, nBytes) {
             e = 0;
         }
     }
-    for(; mLen >= 8; buffer[offset2 + i16] = m & 255, i16 += d, m /= 256, mLen -= 8){
+    for(; mLen >= 8; buffer[offset2 + i15] = m & 255, i15 += d, m /= 256, mLen -= 8){
     }
     e = e << mLen | m;
     eLen += mLen;
-    for(; eLen > 0; buffer[offset2 + i16] = e & 255, i16 += d, e /= 256, eLen -= 8){
+    for(; eLen > 0; buffer[offset2 + i15] = e & 255, i15 += d, e /= 256, eLen -= 8){
     }
-    buffer[offset2 + i16 - d] |= s * 128;
+    buffer[offset2 + i15 - d] |= s * 128;
 }
 var toString3 = {
 }.toString;
@@ -19570,8 +19570,8 @@ function allocUnsafe3(that, size) {
     assertSize2(size);
     that = createBuffer2(that, size < 0 ? 0 : checked3(size) | 0);
     if (!Buffer4.TYPED_ARRAY_SUPPORT) {
-        for(var i16 = 0; i16 < size; ++i16){
-            that[i16] = 0;
+        for(var i15 = 0; i15 < size; ++i15){
+            that[i15] = 0;
         }
     }
     return that;
@@ -19600,8 +19600,8 @@ function fromString3(that, string1, encoding) {
 function fromArrayLike2(that, array) {
     var length1 = array.length < 0 ? 0 : checked3(array.length) | 0;
     that = createBuffer2(that, length1);
-    for(var i17 = 0; i17 < length1; i17 += 1){
-        that[i17] = array[i17] & 255;
+    for(var i16 = 0; i16 < length1; i16 += 1){
+        that[i16] = array[i16] & 255;
     }
     return that;
 }
@@ -19668,10 +19668,10 @@ Buffer4.compare = function compare3(a, b) {
     if (a === b) return 0;
     var x = a.length;
     var y = b.length;
-    for(var i17 = 0, len = Math.min(x, y); i17 < len; ++i17){
-        if (a[i17] !== b[i17]) {
-            x = a[i17];
-            y = b[i17];
+    for(var i16 = 0, len = Math.min(x, y); i16 < len; ++i16){
+        if (a[i16] !== b[i16]) {
+            x = a[i16];
+            y = b[i16];
             break;
         }
     }
@@ -19704,17 +19704,17 @@ Buffer4.concat = function concat2(list, length1) {
     if (list.length === 0) {
         return Buffer4.alloc(0);
     }
-    var i17;
+    var i16;
     if (length1 === void 0) {
         length1 = 0;
-        for(i17 = 0; i17 < list.length; ++i17){
-            length1 += list[i17].length;
+        for(i16 = 0; i16 < list.length; ++i16){
+            length1 += list[i16].length;
         }
     }
     var buffer = Buffer4.allocUnsafe(length1);
     var pos = 0;
-    for(i17 = 0; i17 < list.length; ++i17){
-        var buf = list[i17];
+    for(i16 = 0; i16 < list.length; ++i16){
+        var buf = list[i16];
         if (!internalIsBuffer3(buf)) {
             throw new TypeError('"list" argument must be an Array of Buffers');
         }
@@ -19811,17 +19811,17 @@ function slowToString2(encoding, start, end2) {
 }
 Buffer4.prototype._isBuffer = true;
 function swap2(b, n1, m) {
-    var i17 = b[n1];
+    var i16 = b[n1];
     b[n1] = b[m];
-    b[m] = i17;
+    b[m] = i16;
 }
 Buffer4.prototype.swap16 = function swap162() {
     var len = this.length;
     if (len % 2 !== 0) {
         throw new RangeError("Buffer size must be a multiple of 16-bits");
     }
-    for(var i17 = 0; i17 < len; i17 += 2){
-        swap2(this, i17, i17 + 1);
+    for(var i16 = 0; i16 < len; i16 += 2){
+        swap2(this, i16, i16 + 1);
     }
     return this;
 };
@@ -19830,9 +19830,9 @@ Buffer4.prototype.swap32 = function swap322() {
     if (len % 4 !== 0) {
         throw new RangeError("Buffer size must be a multiple of 32-bits");
     }
-    for(var i17 = 0; i17 < len; i17 += 4){
-        swap2(this, i17, i17 + 3);
-        swap2(this, i17 + 1, i17 + 2);
+    for(var i16 = 0; i16 < len; i16 += 4){
+        swap2(this, i16, i16 + 3);
+        swap2(this, i16 + 1, i16 + 2);
     }
     return this;
 };
@@ -19841,11 +19841,11 @@ Buffer4.prototype.swap64 = function swap642() {
     if (len % 8 !== 0) {
         throw new RangeError("Buffer size must be a multiple of 64-bits");
     }
-    for(var i17 = 0; i17 < len; i17 += 8){
-        swap2(this, i17, i17 + 7);
-        swap2(this, i17 + 1, i17 + 6);
-        swap2(this, i17 + 2, i17 + 5);
-        swap2(this, i17 + 3, i17 + 4);
+    for(var i16 = 0; i16 < len; i16 += 8){
+        swap2(this, i16, i16 + 7);
+        swap2(this, i16 + 1, i16 + 6);
+        swap2(this, i16 + 2, i16 + 5);
+        swap2(this, i16 + 3, i16 + 4);
     }
     return this;
 };
@@ -19907,10 +19907,10 @@ Buffer4.prototype.compare = function compare22(target, start, end2, thisStart, t
     var len = Math.min(x, y);
     var thisCopy = this.slice(thisStart, thisEnd);
     var targetCopy = target.slice(start, end2);
-    for(var i17 = 0; i17 < len; ++i17){
-        if (thisCopy[i17] !== targetCopy[i17]) {
-            x = thisCopy[i17];
-            y = targetCopy[i17];
+    for(var i16 = 0; i16 < len; ++i16){
+        if (thisCopy[i16] !== targetCopy[i16]) {
+            x = thisCopy[i16];
+            y = targetCopy[i16];
             break;
         }
     }
@@ -19986,29 +19986,29 @@ function arrayIndexOf3(arr, val, byteOffset, encoding, dir) {
             return buf.readUInt16BE(i21 * indexSize);
         }
     }
-    var i17;
+    var i16;
     if (dir) {
         var foundIndex = -1;
-        for(i17 = byteOffset; i17 < arrLength; i17++){
-            if (read21(arr, i17) === read21(val, foundIndex === -1 ? 0 : i17 - foundIndex)) {
-                if (foundIndex === -1) foundIndex = i17;
-                if (i17 - foundIndex + 1 === valLength) return foundIndex * indexSize;
+        for(i16 = byteOffset; i16 < arrLength; i16++){
+            if (read21(arr, i16) === read21(val, foundIndex === -1 ? 0 : i16 - foundIndex)) {
+                if (foundIndex === -1) foundIndex = i16;
+                if (i16 - foundIndex + 1 === valLength) return foundIndex * indexSize;
             } else {
-                if (foundIndex !== -1) i17 -= i17 - foundIndex;
+                if (foundIndex !== -1) i16 -= i16 - foundIndex;
                 foundIndex = -1;
             }
         }
     } else {
         if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength;
-        for(i17 = byteOffset; i17 >= 0; i17--){
+        for(i16 = byteOffset; i16 >= 0; i16--){
             var found = true;
             for(var j = 0; j < valLength; j++){
-                if (read21(arr, i17 + j) !== read21(val, j)) {
+                if (read21(arr, i16 + j) !== read21(val, j)) {
                     found = false;
                     break;
                 }
             }
-            if (found) return i17;
+            if (found) return i16;
         }
     }
     return -1;
@@ -20038,12 +20038,12 @@ function hexWrite2(buf, string1, offset2, length1) {
     if (length1 > strLen / 2) {
         length1 = strLen / 2;
     }
-    for(var i17 = 0; i17 < length1; ++i17){
-        var parsed = parseInt(string1.substr(i17 * 2, 2), 16);
-        if (isNaN(parsed)) return i17;
-        buf[offset2 + i17] = parsed;
+    for(var i16 = 0; i16 < length1; ++i16){
+        var parsed = parseInt(string1.substr(i16 * 2, 2), 16);
+        if (isNaN(parsed)) return i16;
+        buf[offset2 + i16] = parsed;
     }
-    return i17;
+    return i16;
 }
 function utf8Write2(buf, string1, offset2, length1) {
     return blitBuffer3(utf8ToBytes3(string1, buf.length - offset2), buf, offset2, length1);
@@ -20130,12 +20130,12 @@ function base64Slice3(buf, start, end2) {
 function utf8Slice3(buf, start, end2) {
     end2 = Math.min(buf.length, end2);
     var res = [];
-    var i17 = start;
-    while(i17 < end2){
-        var firstByte = buf[i17];
+    var i16 = start;
+    while(i16 < end2){
+        var firstByte = buf[i16];
         var codePoint = null;
         var bytesPerSequence = firstByte > 239 ? 4 : firstByte > 223 ? 3 : firstByte > 191 ? 2 : 1;
-        if (i17 + bytesPerSequence <= end2) {
+        if (i16 + bytesPerSequence <= end2) {
             var secondByte, thirdByte, fourthByte, tempCodePoint;
             switch(bytesPerSequence){
                 case 1:
@@ -20144,7 +20144,7 @@ function utf8Slice3(buf, start, end2) {
                     }
                     break;
                 case 2:
-                    secondByte = buf[i17 + 1];
+                    secondByte = buf[i16 + 1];
                     if ((secondByte & 192) === 128) {
                         tempCodePoint = (firstByte & 31) << 6 | secondByte & 63;
                         if (tempCodePoint > 127) {
@@ -20153,8 +20153,8 @@ function utf8Slice3(buf, start, end2) {
                     }
                     break;
                 case 3:
-                    secondByte = buf[i17 + 1];
-                    thirdByte = buf[i17 + 2];
+                    secondByte = buf[i16 + 1];
+                    thirdByte = buf[i16 + 2];
                     if ((secondByte & 192) === 128 && (thirdByte & 192) === 128) {
                         tempCodePoint = (firstByte & 15) << 12 | (secondByte & 63) << 6 | thirdByte & 63;
                         if (tempCodePoint > 2047 && (tempCodePoint < 55296 || tempCodePoint > 57343)) {
@@ -20163,9 +20163,9 @@ function utf8Slice3(buf, start, end2) {
                     }
                     break;
                 case 4:
-                    secondByte = buf[i17 + 1];
-                    thirdByte = buf[i17 + 2];
-                    fourthByte = buf[i17 + 3];
+                    secondByte = buf[i16 + 1];
+                    thirdByte = buf[i16 + 2];
+                    fourthByte = buf[i16 + 3];
                     if ((secondByte & 192) === 128 && (thirdByte & 192) === 128 && (fourthByte & 192) === 128) {
                         tempCodePoint = (firstByte & 15) << 18 | (secondByte & 63) << 12 | (thirdByte & 63) << 6 | fourthByte & 63;
                         if (tempCodePoint > 65535 && tempCodePoint < 1114112) {
@@ -20183,7 +20183,7 @@ function utf8Slice3(buf, start, end2) {
             codePoint = 56320 | codePoint & 1023;
         }
         res.push(codePoint);
-        i17 += bytesPerSequence;
+        i16 += bytesPerSequence;
     }
     return decodeCodePointsArray3(res);
 }
@@ -20194,25 +20194,25 @@ function decodeCodePointsArray3(codePoints) {
         return String.fromCharCode.apply(String, codePoints);
     }
     var res = "";
-    var i17 = 0;
-    while(i17 < len){
-        res += String.fromCharCode.apply(String, codePoints.slice(i17, i17 += MAX_ARGUMENTS_LENGTH2));
+    var i16 = 0;
+    while(i16 < len){
+        res += String.fromCharCode.apply(String, codePoints.slice(i16, i16 += MAX_ARGUMENTS_LENGTH2));
     }
     return res;
 }
 function asciiSlice3(buf, start, end2) {
     var ret = "";
     end2 = Math.min(buf.length, end2);
-    for(var i17 = start; i17 < end2; ++i17){
-        ret += String.fromCharCode(buf[i17] & 127);
+    for(var i16 = start; i16 < end2; ++i16){
+        ret += String.fromCharCode(buf[i16] & 127);
     }
     return ret;
 }
 function latin1Slice3(buf, start, end2) {
     var ret = "";
     end2 = Math.min(buf.length, end2);
-    for(var i17 = start; i17 < end2; ++i17){
-        ret += String.fromCharCode(buf[i17]);
+    for(var i16 = start; i16 < end2; ++i16){
+        ret += String.fromCharCode(buf[i16]);
     }
     return ret;
 }
@@ -20221,16 +20221,16 @@ function hexSlice3(buf, start, end2) {
     if (!start || start < 0) start = 0;
     if (!end2 || end2 < 0 || end2 > len) end2 = len;
     var out = "";
-    for(var i17 = start; i17 < end2; ++i17){
-        out += toHex3(buf[i17]);
+    for(var i16 = start; i16 < end2; ++i16){
+        out += toHex3(buf[i16]);
     }
     return out;
 }
 function utf16leSlice3(buf, start, end2) {
     var bytes = buf.slice(start, end2);
     var res = "";
-    for(var i17 = 0; i17 < bytes.length; i17 += 2){
-        res += String.fromCharCode(bytes[i17] + bytes[i17 + 1] * 256);
+    for(var i16 = 0; i16 < bytes.length; i16 += 2){
+        res += String.fromCharCode(bytes[i16] + bytes[i16 + 1] * 256);
     }
     return res;
 }
@@ -20258,8 +20258,8 @@ Buffer4.prototype.slice = function slice2(start, end2) {
     } else {
         var sliceLen = end2 - start;
         newBuf = new Buffer4(sliceLen, void 0);
-        for(var i17 = 0; i17 < sliceLen; ++i17){
-            newBuf[i17] = this[i17 + start];
+        for(var i16 = 0; i16 < sliceLen; ++i16){
+            newBuf[i16] = this[i16 + start];
         }
     }
     return newBuf;
@@ -20274,9 +20274,9 @@ Buffer4.prototype.readUIntLE = function readUIntLE2(offset2, byteLength21, noAss
     if (!noAssert) checkOffset2(offset2, byteLength21, this.length);
     var val = this[offset2];
     var mul1 = 1;
-    var i18 = 0;
-    while((++i18) < byteLength21 && (mul1 *= 256)){
-        val += this[offset2 + i18] * mul1;
+    var i17 = 0;
+    while((++i17) < byteLength21 && (mul1 *= 256)){
+        val += this[offset2 + i17] * mul1;
     }
     return val;
 };
@@ -20319,9 +20319,9 @@ Buffer4.prototype.readIntLE = function readIntLE2(offset2, byteLength21, noAsser
     if (!noAssert) checkOffset2(offset2, byteLength21, this.length);
     var val = this[offset2];
     var mul1 = 1;
-    var i18 = 0;
-    while((++i18) < byteLength21 && (mul1 *= 256)){
-        val += this[offset2 + i18] * mul1;
+    var i17 = 0;
+    while((++i17) < byteLength21 && (mul1 *= 256)){
+        val += this[offset2 + i17] * mul1;
     }
     mul1 *= 128;
     if (val >= mul1) val -= Math.pow(2, 8 * byteLength21);
@@ -20331,11 +20331,11 @@ Buffer4.prototype.readIntBE = function readIntBE2(offset2, byteLength21, noAsser
     offset2 = offset2 | 0;
     byteLength21 = byteLength21 | 0;
     if (!noAssert) checkOffset2(offset2, byteLength21, this.length);
-    var i18 = byteLength21;
+    var i17 = byteLength21;
     var mul1 = 1;
-    var val = this[offset2 + --i18];
-    while(i18 > 0 && (mul1 *= 256)){
-        val += this[offset2 + --i18] * mul1;
+    var val = this[offset2 + --i17];
+    while(i17 > 0 && (mul1 *= 256)){
+        val += this[offset2 + --i17] * mul1;
     }
     mul1 *= 128;
     if (val >= mul1) val -= Math.pow(2, 8 * byteLength21);
@@ -20394,10 +20394,10 @@ Buffer4.prototype.writeUIntLE = function writeUIntLE2(value, offset2, byteLength
         checkInt2(this, value, offset2, byteLength21, maxBytes, 0);
     }
     var mul1 = 1;
-    var i18 = 0;
+    var i17 = 0;
     this[offset2] = value & 255;
-    while((++i18) < byteLength21 && (mul1 *= 256)){
-        this[offset2 + i18] = value / mul1 & 255;
+    while((++i17) < byteLength21 && (mul1 *= 256)){
+        this[offset2 + i17] = value / mul1 & 255;
     }
     return offset2 + byteLength21;
 };
@@ -20409,11 +20409,11 @@ Buffer4.prototype.writeUIntBE = function writeUIntBE2(value, offset2, byteLength
         var maxBytes = Math.pow(2, 8 * byteLength21) - 1;
         checkInt2(this, value, offset2, byteLength21, maxBytes, 0);
     }
-    var i18 = byteLength21 - 1;
+    var i17 = byteLength21 - 1;
     var mul1 = 1;
-    this[offset2 + i18] = value & 255;
-    while((--i18) >= 0 && (mul1 *= 256)){
-        this[offset2 + i18] = value / mul1 & 255;
+    this[offset2 + i17] = value & 255;
+    while((--i17) >= 0 && (mul1 *= 256)){
+        this[offset2 + i17] = value / mul1 & 255;
     }
     return offset2 + byteLength21;
 };
@@ -20427,8 +20427,8 @@ Buffer4.prototype.writeUInt8 = function writeUInt82(value, offset2, noAssert) {
 };
 function objectWriteUInt162(buf, value, offset2, littleEndian) {
     if (value < 0) value = 65535 + value + 1;
-    for(var i18 = 0, j = Math.min(buf.length - offset2, 2); i18 < j; ++i18){
-        buf[offset2 + i18] = (value & 255 << 8 * (littleEndian ? i18 : 1 - i18)) >>> (littleEndian ? i18 : 1 - i18) * 8;
+    for(var i17 = 0, j = Math.min(buf.length - offset2, 2); i17 < j; ++i17){
+        buf[offset2 + i17] = (value & 255 << 8 * (littleEndian ? i17 : 1 - i17)) >>> (littleEndian ? i17 : 1 - i17) * 8;
     }
 }
 Buffer4.prototype.writeUInt16LE = function writeUInt16LE2(value, offset2, noAssert) {
@@ -20457,8 +20457,8 @@ Buffer4.prototype.writeUInt16BE = function writeUInt16BE2(value, offset2, noAsse
 };
 function objectWriteUInt322(buf, value, offset2, littleEndian) {
     if (value < 0) value = 4294967295 + value + 1;
-    for(var i18 = 0, j = Math.min(buf.length - offset2, 4); i18 < j; ++i18){
-        buf[offset2 + i18] = value >>> (littleEndian ? i18 : 3 - i18) * 8 & 255;
+    for(var i17 = 0, j = Math.min(buf.length - offset2, 4); i17 < j; ++i17){
+        buf[offset2 + i17] = value >>> (littleEndian ? i17 : 3 - i17) * 8 & 255;
     }
 }
 Buffer4.prototype.writeUInt32LE = function writeUInt32LE2(value, offset2, noAssert) {
@@ -20496,15 +20496,15 @@ Buffer4.prototype.writeIntLE = function writeIntLE2(value, offset2, byteLength21
         var limit = Math.pow(2, 8 * byteLength21 - 1);
         checkInt2(this, value, offset2, byteLength21, limit - 1, -limit);
     }
-    var i18 = 0;
+    var i17 = 0;
     var mul1 = 1;
     var sub1 = 0;
     this[offset2] = value & 255;
-    while((++i18) < byteLength21 && (mul1 *= 256)){
-        if (value < 0 && sub1 === 0 && this[offset2 + i18 - 1] !== 0) {
+    while((++i17) < byteLength21 && (mul1 *= 256)){
+        if (value < 0 && sub1 === 0 && this[offset2 + i17 - 1] !== 0) {
             sub1 = 1;
         }
-        this[offset2 + i18] = (value / mul1 >> 0) - sub1 & 255;
+        this[offset2 + i17] = (value / mul1 >> 0) - sub1 & 255;
     }
     return offset2 + byteLength21;
 };
@@ -20515,15 +20515,15 @@ Buffer4.prototype.writeIntBE = function writeIntBE2(value, offset2, byteLength21
         var limit = Math.pow(2, 8 * byteLength21 - 1);
         checkInt2(this, value, offset2, byteLength21, limit - 1, -limit);
     }
-    var i18 = byteLength21 - 1;
+    var i17 = byteLength21 - 1;
     var mul1 = 1;
     var sub1 = 0;
-    this[offset2 + i18] = value & 255;
-    while((--i18) >= 0 && (mul1 *= 256)){
-        if (value < 0 && sub1 === 0 && this[offset2 + i18 + 1] !== 0) {
+    this[offset2 + i17] = value & 255;
+    while((--i17) >= 0 && (mul1 *= 256)){
+        if (value < 0 && sub1 === 0 && this[offset2 + i17 + 1] !== 0) {
             sub1 = 1;
         }
-        this[offset2 + i18] = (value / mul1 >> 0) - sub1 & 255;
+        this[offset2 + i17] = (value / mul1 >> 0) - sub1 & 255;
     }
     return offset2 + byteLength21;
 };
@@ -20637,14 +20637,14 @@ Buffer4.prototype.copy = function copy3(target, targetStart, start, end2) {
         end2 = target.length - targetStart + start;
     }
     var len = end2 - start;
-    var i18;
+    var i17;
     if (this === target && start < targetStart && targetStart < end2) {
-        for(i18 = len - 1; i18 >= 0; --i18){
-            target[i18 + targetStart] = this[i18 + start];
+        for(i17 = len - 1; i17 >= 0; --i17){
+            target[i17 + targetStart] = this[i17 + start];
         }
     } else if (len < 1000 || !Buffer4.TYPED_ARRAY_SUPPORT) {
-        for(i18 = 0; i18 < len; ++i18){
-            target[i18 + targetStart] = this[i18 + start];
+        for(i17 = 0; i17 < len; ++i17){
+            target[i17 + targetStart] = this[i17 + start];
         }
     } else {
         Uint8Array.prototype.set.call(target, this.subarray(start, start + len), targetStart);
@@ -20685,16 +20685,16 @@ Buffer4.prototype.fill = function fill2(val, start, end2, encoding) {
     start = start >>> 0;
     end2 = end2 === void 0 ? this.length : end2 >>> 0;
     if (!val) val = 0;
-    var i18;
+    var i17;
     if (typeof val === "number") {
-        for(i18 = start; i18 < end2; ++i18){
-            this[i18] = val;
+        for(i17 = start; i17 < end2; ++i17){
+            this[i17] = val;
         }
     } else {
         var bytes = internalIsBuffer3(val) ? val : utf8ToBytes3(new Buffer4(val, encoding).toString());
         var len = bytes.length;
-        for(i18 = 0; i18 < end2 - start; ++i18){
-            this[i18 + start] = bytes[i18 % len];
+        for(i17 = 0; i17 < end2 - start; ++i17){
+            this[i17 + start] = bytes[i17 % len];
         }
     }
     return this;
@@ -20722,14 +20722,14 @@ function utf8ToBytes3(string1, units) {
     var length1 = string1.length;
     var leadSurrogate = null;
     var bytes = [];
-    for(var i18 = 0; i18 < length1; ++i18){
-        codePoint = string1.charCodeAt(i18);
+    for(var i17 = 0; i17 < length1; ++i17){
+        codePoint = string1.charCodeAt(i17);
         if (codePoint > 55295 && codePoint < 57344) {
             if (!leadSurrogate) {
                 if (codePoint > 56319) {
                     if ((units -= 3) > -1) bytes.push(239, 191, 189);
                     continue;
-                } else if (i18 + 1 === length1) {
+                } else if (i17 + 1 === length1) {
                     if ((units -= 3) > -1) bytes.push(239, 191, 189);
                     continue;
                 }
@@ -20766,17 +20766,17 @@ function utf8ToBytes3(string1, units) {
 }
 function asciiToBytes3(str) {
     var byteArray = [];
-    for(var i18 = 0; i18 < str.length; ++i18){
-        byteArray.push(str.charCodeAt(i18) & 255);
+    for(var i17 = 0; i17 < str.length; ++i17){
+        byteArray.push(str.charCodeAt(i17) & 255);
     }
     return byteArray;
 }
 function utf16leToBytes3(str, units) {
     var c, hi, lo;
     var byteArray = [];
-    for(var i18 = 0; i18 < str.length; ++i18){
+    for(var i17 = 0; i17 < str.length; ++i17){
         if ((units -= 2) < 0) break;
-        c = str.charCodeAt(i18);
+        c = str.charCodeAt(i17);
         hi = c >> 8;
         lo = c % 256;
         byteArray.push(lo);
@@ -20788,11 +20788,11 @@ function base64ToBytes3(str) {
     return toByteArray2(base64clean2(str));
 }
 function blitBuffer3(src, dst, offset2, length1) {
-    for(var i18 = 0; i18 < length1; ++i18){
-        if (i18 + offset2 >= dst.length || i18 >= src.length) break;
-        dst[i18 + offset2] = src[i18];
+    for(var i17 = 0; i17 < length1; ++i17){
+        if (i17 + offset2 >= dst.length || i17 >= src.length) break;
+        dst[i17 + offset2] = src[i17];
     }
-    return i18;
+    return i17;
 }
 function isnan3(val) {
     return val !== val;
@@ -20908,8 +20908,8 @@ function drainQueue2() {
 function nextTick1(fun) {
     var args = new Array(arguments.length - 1);
     if (arguments.length > 1) {
-        for(var i18 = 1; i18 < arguments.length; i18++){
-            args[i18 - 1] = arguments[i18];
+        for(var i17 = 1; i17 < arguments.length; i17++){
+            args[i17 - 1] = arguments[i17];
         }
     }
     queue1.push(new Item2(fun, args));
@@ -21132,8 +21132,8 @@ var lzutf8 = createCommonjsModule3(function(module) {
             if (typeof window === "object") globalObject = window;
             else if (typeof self === "object") globalObject = self;
             if (globalObject !== void 0) {
-                for(var i19 = 0; i19 < types.length; i19++){
-                    if (globalObject[types[i19]]) globalObject[types[i19]].prototype.subarray = subarray;
+                for(var i18 = 0; i18 < types.length; i18++){
+                    if (globalObject[types[i18]]) globalObject[types[i18]].prototype.subarray = subarray;
                 }
             }
         }
@@ -21462,13 +21462,13 @@ var lzutf8 = createCommonjsModule3(function(module) {
             };
             ArrayTools2.countNonzeroValuesInArray = function(array) {
                 var result3 = 0;
-                for(var i20 = 0; i20 < array.length; i20++)if (array[i20]) result3++;
+                for(var i19 = 0; i19 < array.length; i19++)if (array[i19]) result3++;
                 return result3;
             };
             ArrayTools2.truncateStartingElements = function(array, truncatedLength) {
                 if (array.length <= truncatedLength) throw new RangeError("truncateStartingElements: Requested length should be smaller than array length");
                 var sourcePosition = array.length - truncatedLength;
-                for(var i20 = 0; i20 < truncatedLength; i20++)array[i20] = array[sourcePosition + i20];
+                for(var i19 = 0; i19 < truncatedLength; i19++)array[i19] = array[sourcePosition + i19];
                 array.length = truncatedLength;
             };
             ArrayTools2.doubleByteArrayCapacity = function(array) {
@@ -21519,7 +21519,7 @@ var lzutf8 = createCommonjsModule3(function(module) {
                 } else {
                     var len = arr.length;
                     var buf = new Buffer4(len);
-                    for(var i20 = 0; i20 < len; i20++)buf[i20] = arr[i20];
+                    for(var i19 = 0; i19 < len; i19++)buf[i19] = arr[i19];
                     return buf;
                 }
             };
@@ -21529,7 +21529,7 @@ var lzutf8 = createCommonjsModule3(function(module) {
                 } else {
                     var len = buf.length;
                     var arr = new Uint8Array(len);
-                    for(var i21 = 0; i21 < len; i21++)arr[i21] = buf[i21];
+                    for(var i20 = 0; i20 < len; i20++)arr[i20] = buf[i20];
                     return arr;
                 }
             };
@@ -21706,7 +21706,7 @@ var lzutf8 = createCommonjsModule3(function(module) {
         };
         LZUTF82.getRandomUTF16StringOfLength = function(length1) {
             var randomString = "";
-            for(var i22 = 0; i22 < length1; i22++){
+            for(var i21 = 0; i21 < length1; i21++){
                 var randomCodePoint = void 0;
                 do {
                     randomCodePoint = LZUTF82.getRandomIntegerInRange(0, 1114111 + 1);
@@ -21734,10 +21734,10 @@ var lzutf8 = createCommonjsModule3(function(module) {
                 if (this.outputPosition === this.outputBufferCapacity) this.flushBufferToOutputString();
             };
             StringBuilder3.prototype.appendCharCodes = function(charCodes) {
-                for(var i22 = 0, length_1 = charCodes.length; i22 < length_1; i22++)this.appendCharCode(charCodes[i22]);
+                for(var i21 = 0, length_1 = charCodes.length; i21 < length_1; i21++)this.appendCharCode(charCodes[i21]);
             };
             StringBuilder3.prototype.appendString = function(str) {
-                for(var i22 = 0, length_2 = str.length; i22 < length_2; i22++)this.appendCharCode(str.charCodeAt(i22));
+                for(var i21 = 0, length_2 = str.length; i21 < length_2; i21++)this.appendCharCode(str.charCodeAt(i21));
             };
             StringBuilder3.prototype.appendCodePoint = function(codePoint) {
                 if (codePoint <= 65535) {
@@ -21888,8 +21888,8 @@ var lzutf8 = createCommonjsModule3(function(module) {
                 var input = this.inputBuffer;
                 var longestMatchDistance;
                 var longestMatchLength = 0;
-                for(var i22 = 0; i22 < bucket.length; i22++){
-                    var testedSequencePosition = bucket.getInReversedOrder(i22) - this.inputBufferStreamOffset;
+                for(var i21 = 0; i21 < bucket.length; i21++){
+                    var testedSequencePosition = bucket.getInReversedOrder(i21) - this.inputBufferStreamOffset;
                     var testedSequenceDistance = matchedSequencePosition - testedSequencePosition;
                     var lengthToSurpass = void 0;
                     if (longestMatchDistance === void 0) lengthToSurpass = this.MinimumSequenceLength - 1;
@@ -22027,7 +22027,7 @@ var lzutf8 = createCommonjsModule3(function(module) {
             };
             CompressorCustomHashTable3.prototype.getTotalElementCount = function() {
                 var result3 = 0;
-                for(var i22 = 0; i22 < this.bucketLocators.length; i22 += 2)result3 += this.bucketLocators[i22 + 1];
+                for(var i21 = 0; i21 < this.bucketLocators.length; i21 += 2)result3 += this.bucketLocators[i21 + 1];
                 return result3;
             };
             return CompressorCustomHashTable3;
@@ -22064,8 +22064,8 @@ var lzutf8 = createCommonjsModule3(function(module) {
             };
             CompressorSimpleHashTable3.prototype.getTotalElementCount = function() {
                 var currentSum = 0;
-                for(var i22 = 0; i22 < this.buckets.length; i22++){
-                    if (this.buckets[i22] !== void 0) currentSum += this.buckets[i22].length;
+                for(var i21 = 0; i21 < this.buckets.length; i21++){
+                    if (this.buckets[i21] !== void 0) currentSum += this.buckets[i21].length;
                 }
                 return currentSum;
             };
@@ -22137,7 +22137,7 @@ var lzutf8 = createCommonjsModule3(function(module) {
                 this.outputBuffer = LZUTF82.CompressionCommon.getCroppedBuffer(this.outputBuffer, this.outputPosition - cropLength, cropLength, initialCapacity);
                 this.outputPosition = cropLength;
                 if (this.outputBufferRemainder) {
-                    for(var i22 = 0; i22 < this.outputBufferRemainder.length; i22++)this.outputByte(this.outputBufferRemainder[i22]);
+                    for(var i21 = 0; i21 < this.outputBufferRemainder.length; i21++)this.outputByte(this.outputBufferRemainder[i21]);
                     this.outputBufferRemainder = void 0;
                 }
                 return cropLength;
@@ -22417,8 +22417,8 @@ var lzutf8 = createCommonjsModule3(function(module) {
                     if (!outputBuffer) outputBuffer = new Uint8Array(base64String.length);
                     var outputPosition = 0;
                     var length1 = base64String.length;
-                    for(var i23 = 0; i23 < length1; i23 += 4){
-                        var uint24 = reverseCharCodeMap[base64String.charCodeAt(i23)] << 18 | reverseCharCodeMap[base64String.charCodeAt(i23 + 1)] << 12 | reverseCharCodeMap[base64String.charCodeAt(i23 + 2)] << 6 | reverseCharCodeMap[base64String.charCodeAt(i23 + 3)];
+                    for(var i22 = 0; i22 < length1; i22 += 4){
+                        var uint24 = reverseCharCodeMap[base64String.charCodeAt(i22)] << 18 | reverseCharCodeMap[base64String.charCodeAt(i22 + 1)] << 12 | reverseCharCodeMap[base64String.charCodeAt(i22 + 2)] << 6 | reverseCharCodeMap[base64String.charCodeAt(i22 + 3)];
                         outputBuffer[outputPosition++] = uint24 >>> 16 & 255;
                         outputBuffer[outputPosition++] = uint24 >>> 8 & 255;
                         outputBuffer[outputPosition++] = uint24 & 255;
@@ -22444,10 +22444,10 @@ var lzutf8 = createCommonjsModule3(function(module) {
                     var outputStringBuilder = new LZUTF82.StringBuilder();
                     var remainder = 0;
                     var state1 = 1;
-                    for(var i23 = 0; i23 < inputLength; i23 += 2){
+                    for(var i22 = 0; i22 < inputLength; i22 += 2){
                         var value = void 0;
-                        if (i23 == inputLength - 1) value = input[i23] << 8;
-                        else value = input[i23] << 8 | input[i23 + 1];
+                        if (i22 == inputLength - 1) value = input[i22] << 8;
+                        else value = input[i22] << 8 | input[i22 + 1];
                         outputStringBuilder.appendCharCode(remainder << 16 - state1 | value >>> state1);
                         remainder = value & (1 << state1) - 1;
                         if (state1 === 15) {
@@ -22457,7 +22457,7 @@ var lzutf8 = createCommonjsModule3(function(module) {
                         } else {
                             state1 += 1;
                         }
-                        if (i23 >= inputLength - 2) outputStringBuilder.appendCharCode(remainder << 16 - state1);
+                        if (i22 >= inputLength - 2) outputStringBuilder.appendCharCode(remainder << 16 - state1);
                     }
                     outputStringBuilder.appendCharCode(32768 | inputLength % 2);
                     return outputStringBuilder.getOutputString();
@@ -22473,8 +22473,8 @@ var lzutf8 = createCommonjsModule3(function(module) {
                     };
                     var remainder = 0;
                     var state1 = 0;
-                    for(var i23 = 0; i23 < input.length; i23++){
-                        var value = input.charCodeAt(i23);
+                    for(var i22 = 0; i22 < input.length; i22++){
+                        var value = input.charCodeAt(i22);
                         if (value >= 32768) {
                             if (value == (32768 | 1)) outputPosition--;
                             state1 = 0;
@@ -22785,7 +22785,7 @@ var lzutf8 = createCommonjsModule3(function(module) {
                 ];
                 DecimalString.encode = function(binaryBytes) {
                     var resultArray = [];
-                    for(var i23 = 0; i23 < binaryBytes.length; i23++)resultArray.push(lookupTable[binaryBytes[i23]]);
+                    for(var i22 = 0; i22 < binaryBytes.length; i22++)resultArray.push(lookupTable[binaryBytes[i22]]);
                     return resultArray.join(" ");
                 };
             })(Encoding2.DecimalString || (Encoding2.DecimalString = {
@@ -23406,10 +23406,10 @@ class svgCloth {
         let vw = this.viewBox.v2;
         let headScale = vw / w2;
         let els = document.getElementsByClassName("scale-with-viewer");
-        for(let i23 = 0; i23 < els.length; i23++){
-            let current = els[i23].getAttribute("transform");
+        for(let i22 = 0; i22 < els.length; i22++){
+            let current = els[i22].getAttribute("transform");
             current = current.replace(/scale\([0-9]*.*[0-9]*\)/, `scale(${headScale})`);
-            els[i23].setAttribute("transform", current);
+            els[i22].setAttribute("transform", current);
         }
         if (this.grid) setRulers({
             x: 0,
@@ -23523,10 +23523,10 @@ function handleWheel(evt, viewBox) {
     let vw = viewBox.v2;
     let headScale = vw / w2;
     let els = document.getElementsByClassName("scale-with-viewer");
-    for(let i23 = 0; i23 < els.length; i23++){
-        let current = els[i23].getAttribute("transform");
+    for(let i22 = 0; i22 < els.length; i22++){
+        let current = els[i22].getAttribute("transform");
         current = current.replace(/scale\([0-9]*.*[0-9]*\)/, `scale(${headScale})`);
-        els[i23].setAttribute("transform", current);
+        els[i22].setAttribute("transform", current);
     }
 }
 function convert(n1) {
@@ -23549,9 +23549,9 @@ function setRulers(pt, that) {
     const r = (n1)=>step * Math.ceil(n1 / step)
     ;
     const wDivs = [];
-    for(let i23 = r(corners.lt.x); i23 <= r(corners.rt.x); i23 += step)wDivs.push(i23);
+    for(let i22 = r(corners.lt.x); i22 <= r(corners.rt.x); i22 += step)wDivs.push(i22);
     const hDivs = [];
-    for(let i24 = r(corners.lb.y); i24 <= r(corners.lt.y); i24 += step)hDivs.push(i24);
+    for(let i23 = r(corners.lb.y); i23 <= r(corners.lt.y); i23 += step)hDivs.push(i23);
     const outerSVG = document.getElementById("svg-view");
     if (outerSVG === null) return null;
     const bb = outerSVG.getBoundingClientRect();
@@ -23581,13 +23581,13 @@ const round4 = (x, precision = 1)=>Math.round(x * precision) / precision
 function divisionsToTop(rulers) {
     const ws = rulers.wDivs;
     const odd = ws.indexOf(0) < 0 ? ws.length % 2 : ws.indexOf(0) % 2;
-    return svg`\n    <g class="noselect" transform="translate(${-rulers.corners.lt.x / rulers.w * rulers.actualWidth}, 0)"">\n      ${ws.map((d, i23)=>svg`\n          <!--\n          <circle \n            cx="${d / rulers.w * rulers.actualWidth}" \n            cy="10" \n            r="4" \n            fill="black"/>\n          -->\n          <text \n            font-size="smaller"\n            text-anchor="middle" \n            x="${d / rulers.w * rulers.actualWidth}" \n            y="15">\n            ${ws.length < 8 || i23 % 2 === odd ? round4(d, 2) : ""}\n          </text>\n      `
+    return svg`\n    <g class="noselect" transform="translate(${-rulers.corners.lt.x / rulers.w * rulers.actualWidth}, 0)"">\n      ${ws.map((d, i22)=>svg`\n          <!--\n          <circle \n            cx="${d / rulers.w * rulers.actualWidth}" \n            cy="10" \n            r="4" \n            fill="black"/>\n          -->\n          <text \n            font-size="smaller"\n            text-anchor="middle" \n            x="${d / rulers.w * rulers.actualWidth}" \n            y="15">\n            ${ws.length < 8 || i22 % 2 === odd ? round4(d, 2) : ""}\n          </text>\n      `
     )}\n    </g>\n  `;
 }
 function divisionsToLeft(rulers) {
     const hs = rulers.hDivs;
     const odd = hs.indexOf(0) < 0 ? hs.length % 2 : hs.indexOf(0) % 2;
-    return svg`\n    <g class="noselect" transform="translate(0, ${rulers.corners.lt.y / rulers.h * rulers.actualHeight})">\n      ${hs.map((d, i23)=>svg`\n          <text \n            font-size="smaller"\n            text-anchor="middle" \n            x="15" \n            y="${-d / rulers.h * rulers.actualHeight}"\n            transform-origin="${15} ${-d / rulers.h * rulers.actualHeight}"\n            transform="rotate(-90)">\n            ${hs.length < 8 || i23 % 2 === odd ? round4(d, 2) : ""}\n          </text>\n      `
+    return svg`\n    <g class="noselect" transform="translate(0, ${rulers.corners.lt.y / rulers.h * rulers.actualHeight})">\n      ${hs.map((d, i22)=>svg`\n          <text \n            font-size="smaller"\n            text-anchor="middle" \n            x="15" \n            y="${-d / rulers.h * rulers.actualHeight}"\n            transform-origin="${15} ${-d / rulers.h * rulers.actualHeight}"\n            transform="rotate(-90)">\n            ${hs.length < 8 || i22 % 2 === odd ? round4(d, 2) : ""}\n          </text>\n      `
     )}\n    </g>\n  `;
 }
 function drawLocationGuides(rulers, initScale) {

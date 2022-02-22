@@ -1,4 +1,4 @@
-import { Turtle, group } from "../../myLibs/gram_js.js";
+import { Turtle, group } from "../../myLibs/gram-js.js";
 
 export class Environment {
 
@@ -111,9 +111,7 @@ export class Environment {
       let current = this.turtles.pop();
       turtles.unshift(current);
     };
-
-    const final = new Turtle();
-    final.group(...turtles);
+    const final = group(...turtles);
     this.newTurtle(final);
   }
 }

@@ -1,7 +1,5 @@
 DEV_CONTENT=$(cat <<-END
-export { drawTurtle } from "/gram-js/src/drawTurtle.js";
-export { Turtle } from "/gram-js/src/Turtle.js";
-export { group } from "/gram-js/src/group.js";
+export { drawTurtle, Turtle, group } from "/gram-js/exports.js";
 END
 )
 
@@ -37,9 +35,7 @@ END
 )
 
 DEPLOY_CONTENT=$(cat <<-END
-export { drawTurtle } from "https://leomcelroy.com/gram-js/src/drawTurtle.js";
-export { Turtle } from "https://leomcelroy.com/gram-js/src/Turtle.js";
-export { group } from "https://leomcelroy.com/gram-js/src/group.js";
+export { drawTurtle, Turtle, group } from "https://leomcelroy.com/gram-js/exports.js";
 END
 )
 
@@ -86,7 +82,7 @@ elif [ $1 == "bundle" ]; then
 
   # to bundle
   # switch index script to bundle
-  # change imports from local to website in gram_js.js
+  # change imports from local to website in gram-js.js
 
   deno cache --reload ./src/index.js
   deno bundle ./src/index.js bundle.js
@@ -95,11 +91,11 @@ elif [ $1 == "bundle" ]; then
 
   # terser ./bundle.js --compress --mangle --output ./bundle.js
 elif [ $1 == "deploy" ]; then
-  echo "$DEPLOY_CONTENT" > ./myLibs/gram_js.js
+  echo "$DEPLOY_CONTENT" > ./myLibs/gram-js.js
   echo "$DEPLOY_INDEX" > ./index.html
   bash scripts.sh bundle
 elif [ $1 == "dev" ]; then
-  echo "$DEV_CONTENT" > ./myLibs/gram_js.js
+  echo "$DEV_CONTENT" > ./myLibs/gram-js.js
   echo "$DEV_INDEX" > ./index.html
 else
   echo "Command not recognized."

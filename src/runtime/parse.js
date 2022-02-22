@@ -61,7 +61,7 @@ class InputStream {
   }
 
   croak(msg) {
-    if (msg === "Can't handle character: #") msg += "replaced with .() for accessing" // temporary to help update
+    if (msg === "Can't handle character: #") msg += "\n # replaced with .() for accessing" // temporary to help update
     throw new Error(msg + " (" + this.line + ":" + this.col + ")");
   }
 }
@@ -261,19 +261,6 @@ export function parse(string) {
     else input.croak("Expecting punctuation: \"" + ch + "\"");
   }
 
-  function delimited(start, stop, separator = false) {
-    var a = [], first = true, skipped = false;
-    skip_punc(start);
-    while (!input.eof()) {
-        if (is_punc(stop)) break;
-        if (first || !separator) first = false; else { skipped = true; skip_punc(separator) };
-        if (is_punc(stop)) break; // the last separator can be missing
-        a.push(parse_expression());
-    }
-    skip_punc(stop);
-    return a;
-  }
-
   function is_op(op) {
     var tok = input.peek();
     return tok && tok.type === "op" && (!op || tok.value === op) && tok;
@@ -310,7 +297,7 @@ export function parse(string) {
       return maybe_binary({
         type: "binary",
         operator: tok.value,
-        left: tok.value === "=" ? left : { type: "expression", value: [left], loc: left.loc }, // to fix issue with left gathering args post expression
+        left: left,
         right,
         loc: left.loc
       }, my_prec);
@@ -353,21 +340,11 @@ export function parse(string) {
     return result;
   }
 
-  function parse_iterable() {
-    const cond = [];
-    while (!input.eof()) {
-      cond.push(parse_expression());
-      if ( is_punc(":") || is_punc("{") || is_kw("as")) break;
-    }
-
-    return { type: "expression", value: cond };
-  }
-
   function parse_for() { // for ([] | num) (as iterator)
     skip_kw("for");
     let loop = {
       type: "for",
-      iterable: parse_iterable(),
+      iterable: parse_expression(),
       iterator: undefined,
     };
     if (is_kw("as")) {
@@ -476,14 +453,7 @@ export function parse(string) {
     skip_punc("[");
     while (!is_punc("]") && !input.eof()) value.push(parse_expression());
     skip_punc("]")
-
-    return { type: "array", value }
-    // return { type: "array", value: delimited("[", "]", ",") }; 
-    // if i want to use delimited i need array of arrays
-    // that way I can pass called functions
-    // issue is what if a in [a 2, 2] isn't a function
-    // does it come out to [(a 2) 2]
-    // if yes why not just have them write that
+    return { type: "array", value };
   }
 
   function parse_paren() {
@@ -496,17 +466,8 @@ export function parse(string) {
   }
 
   function parse_hash_map() {
-    skip_kw("dict");
-    // const body = delimited("[", "]", ",");
-    // const kv = [];
-    // for (let i = 0; i < body.length; i += 2) {
-    //   const key = body[i];
-    //   if (key.type === "symbol") key.type = "string";
-    //   const value = body[i + 1];
-    //   kv.push([key, value])
-    // }
-
     const body = [];
+    skip_kw("dict");
     skip_punc("[")
     while ( !is_punc("]") ) {
       const key = parse_expression();
