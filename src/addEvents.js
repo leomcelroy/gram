@@ -428,8 +428,8 @@ For reliable saving download txt.` };
 
   addImgPanZoom(body);
 
-  window.onbeforeunload = function() {
-      return "Are you sure? You will lose work you haven't downloaded.";
-  };
+  // window.onbeforeunload = function() {
+  //     return "Are you sure? You will lose work you haven't downloaded.";
+  // };
 }
 
