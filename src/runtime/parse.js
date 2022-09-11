@@ -8,14 +8,13 @@ export const KEYWORDS = [
   "break", 
   "import", 
   "as", 
-  "def",
-  "dict"
+  "def"
 ];
 
 export const OPERATORS = [
   ["="], // assignment
   [
-    "to", "or", "and", 
+    "or", "and", 
     "<", ">", "<=", ">=", 
     "==", "!=", 
     "+", "-", "*", "/", 
@@ -407,7 +406,7 @@ export function parse(string) {
       }
     }
 
-    return { type: "body", value: body };
+    return { type: "body", value: get_calls(body) };
   }
 
   function parse_curly() {
@@ -416,12 +415,13 @@ export function parse(string) {
     while (!is_punc("}")) body.push(parse_expression());
     skip_punc("}")
 
-    return { type: "body", value: body };
+    return { type: "body", value: get_calls(body) };
   }
 
   function parse_body(prec = 0) {
     const body = parse_expression(prec);
     if (body.type !== "body") input.croak("Expecting { or :");
+
     return body;
   }
 
@@ -486,37 +486,33 @@ export function parse(string) {
     // if yes why not just have them write that
   }
 
+  function get_calls(body) {
+    // every first line is a call till end of line
+    const calls = [];
+    let line = body[0].loc.line;
+
+    body.forEach(exp => {
+      if (exp.type === "call") {
+         calls.push(exp);
+      } else if (exp.loc.line !== line) {
+        calls.push({ type: "call", value: [ exp ], loc: exp.loc });
+      } else if (calls.length > 0) calls.at(-1).value.push(exp);
+      else calls.push({ type: "call", value: [ exp ], loc: exp.loc });
+
+      line = exp.loc.line;
+    })
+
+    return calls;
+
+  }
+
   function parse_paren() {
     let value = [];
     skip_punc("(");
     while (!is_punc(")") && !input.eof()) value.push(parse_expression());
     skip_punc(")");
 
-    return { type: "expression", value };
-  }
-
-  function parse_hash_map() {
-    skip_kw("dict");
-    // const body = delimited("[", "]", ",");
-    // const kv = [];
-    // for (let i = 0; i < body.length; i += 2) {
-    //   const key = body[i];
-    //   if (key.type === "symbol") key.type = "string";
-    //   const value = body[i + 1];
-    //   kv.push([key, value])
-    // }
-
-    const body = [];
-    skip_punc("[")
-    while ( !is_punc("]") ) {
-      const key = parse_expression();
-      if (key.type === "symbol") key.type = "string";
-      const value = parse_expression();
-      body.push([key, value])
-    }
-    skip_punc("]")
-
-    return { type: "hash-map", body }; 
+    return { type: value.length <= 1 ? "expression" : "call", value };
   }
 
   function parse_atom() {
@@ -533,7 +529,6 @@ export function parse(string) {
     else if (is_kw("break"))  { input.next(); tok = { type: "break" } }
     else if (is_punc("{")) tok = parse_curly();
     else if (is_punc(":")) tok = parse_colon();
-    else if (is_kw("dict")) tok = parse_hash_map();
     else if (type === "unary") {
       tok = {
         type: "unary",
