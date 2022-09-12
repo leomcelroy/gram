@@ -1,292 +1,117 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono&display=swap');
-/*@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap');*/
-@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;600&family=Source+Code+Pro:wght@400;500&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;600&family=Source+Code+Pro&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
 :root {
   --vertical-bar: 60%;
-  --background-color: #8686868c;
 }
 
-html,
-body {
-	font-family: system-ui;
-	font-size: 12pt;
-	margin: 0px;
-	overscroll-behavior: none; /*this stops the back swipe*/
-/*	overflow: hidden;*/
+html, body {
+  margin: 0px;
 }
-
-input {
-	font-size: 11pt;
-}
-
-.no-select {
-  -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Old versions of Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
-                                  supported by Chrome, Edge, Opera and Firefox */
-}
-
-/* ///////////////////////////////////////////////////// */
-/* GENERAL SET-UP */
-/* ///////////////////////////////////////////////////// */
 
 #root {
-  display: grid;
   width: 100vw;
   height: 100vh;
-  grid-template:
-    "code-editor viewer" 1fr
-    "buttons viewer" 30px
-    / var(--vertical-bar) 1fr;
-  /*padding-bottom: 5px;*/
-  /* grid-row-gap: 5px; */
-  /* grid-column-gap: 0px; */
-}
-
-#vertical-bar {
   position: absolute;
-  left: calc( var(--vertical-bar) - 5px);
-  top: 0px;
-  background: transparent;
-  width: 10px;
-  height: 100%;
-  z-index: 10;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  font-family: 'Roboto', sans-serif;
 }
 
-#vertical-bar:hover {
-  cursor: col-resize
-}
-
-#code-editor {
-	grid-area: code-editor;
-/*	display: grid;
-	grid-template:
-		"search-bar" 60px
-		"lines" 1fr
-		/ 100%;*/
-	background: brown;
-	overflow: hidden;
-}
-
-.CodeMirror {
-	/*font-family: 'Space Mono', monospace;*/
-	/* fave */
-	/*font-family: 'Source Code Pro', monospace !important;*/
-	/*font-family: 'Inconsolata', monospace !important;*/
-	/*font-size: larger !important;*/
-	/*line-height: 1.1em !important;*/
-
-	height: 100% !important;
-	background: #f4e6d0 !important; /* #ebd5b3 */
-	z-index: 0;
-}
-
-/*
-red - string
-blue - param
-green - number
-purple - keyword
-dark purple - boolean
-darkred - function
-pinkish - operator
-*/
-
-.cm-number {
-	border: #00000000 1px solid;
-}
-
-.cm-number:hover {
-	cursor: col-resize;
-	border: lightgrey 1px solid;
-	box-sizing: border-box;
-}
-
-.cm-operator {
-	color: #cd66de;
-	/*color: #3d00cc;*/
-}
-
-.cm-function {
-	color: darkred;
-}
-
-.cm-built-in {
-	color: purple;
-}
-
-.cm-keyword {
-	font-weight: bold;
-}
-
-.cm-block {
-	color: purple;
-	font-weight: bold;
-}
-
-#viewer {
-	grid-area: viewer;
-	overflow: hidden;
-	box-sizing: border-box;
-	position: relative;
-}
-
-.console {
-	position: absolute;
-	left: 0px;
-	bottom: 0px;
-	width: 100%;
-	height: 0px;
-	box-sizing: border-box;
-	z-index: 10;
-}
-
-.console-show {
-	background: lightgreen;
-	height: auto;
-	min-height: 50px;
-	padding: 10px;
-}
-
-.console-erred {
-	background: #d83030c4;
-}
-
-
-/*-----BUTTONS-----*/
-#buttons {
-	grid-area: buttons;
-	display: grid;
-	grid-template: 
-		"run center downloads options"  100%
-	/ auto auto auto auto;
-	/*place-itmes: center;*/
-	/*transition: background 1s ease;*/
-
-	/*overflow: hidden;*/
-}
-
-#run {
-	grid-area: run;
-}
-
-#center {
-	grid-area: center;
-}
-
-#downloads {
-	grid-area: downloads;
-	position: relative;
-	width: 100%;
-}
-
-#options {
-	grid-area: options;
-	position: relative;
-	width: 100%;
-}
-
-#downloads:hover .button-menu {
-	visibility: visible;
-}
-
-#options:hover .button-menu {
-	visibility: visible;
-}
-
-.button-menu {
-	position: absolute;
-	bottom: 100%;
-	left: 50%;
-	transform: translate(-50%, 0);
-    visibility: hidden; /* hidden | visible */
-    width: 100%;
-}
-
-.menu-option.name {
-	width: 95%;
-    border: solid 2px #7b7770;
-    border-radius: 5px;
-    text-align: center;
-}
-
-.menu-option {
-	height: 30px;
+.menu-bar {
+  width: 100%;
+  background: darkgrey;
+  display: flex;
+  flex-direction: row;
 }
 
 .menu-item {
-	display: grid;
-	width: 100%;
-	place-items: center;
-	box-sizing: border-box;
-	border-radius: 2px;
-	background: rgb(239, 239, 239);
-	border: rgb(118, 118, 118) 0.1px solid;
-	font: 400 13.3333px Arial;
+  color: white;
+  height: 100%;
+  display: flex;
+  padding: 7px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .menu-item:hover {
-	background: rgb(229 225 225);
-	border: rgb(74, 74, 74) 1px solid;
+  cursor: pointer;
+  background: #4d4d4d;
+}
+
+.dropdown-menu {
+  position: relative;
+}
+
+.dropdown-menu-container {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  left: 0;
+  top: 100%;
+  z-index: 10;
+  background: darkgrey;
+  visibility: hidden;
+}
+
+.dropdown-menu:hover
+.dropdown-menu-container {
+  visibility: visible;
 }
 
 .checkbox {
-	display: grid;
-	width: 100%;
-	/*place-items: center;*/
-	box-sizing: border-box;
-	border-radius: 2px;
-	background: rgb(239, 239, 239);
-	border: rgb(118, 118, 118) 0.1px solid;
-	font: 400 13.3333px Arial;
+  display: flex;
+  align-items: center;
 }
 
-.checkbox:hover {
-	background: rgb(229 225 225);
-	border: rgb(74, 74, 74) 1px solid;
+.check {
+  width: 10px;
+  height: 10px;
+  background: blue;
+  border-radius: 2px;
 }
 
-.checkbox span {
-	display: grid;
-	grid-template: "fillbox box label" 100% / max-content max-content;
-	place-items: center;
+.checkbox-text {
+  padding-left: 5px;
 }
 
-.checkbox .fillbox {
-	grid-area: fillbox;
-	box-sizing: border-box;
-	width: 12px;
-	height: 12px;
-	border: rgb(118, 118, 118) 0.1px solid;
-	border-radius: 3px;
-	background-color: white;
-	margin: 4px;
+.name-input {
+  padding: 3px;
+  margin: 5px;
 }
 
-.checkbox .filled {
-	background-color: blue;
+.main-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  position: relative;
 }
 
-/*.checkbox span input {
-	grid-area: box;
+.code-editor {
+  display: flex;
+  width: var(--vertical-bar);
+  background: antiquewhite;
+  height: 100%;
 }
 
-.checkbox span .label {
-	grid-area: label;
-}*/
-
-#show-turtles {
-	grid-area: show-turtles;
+.svg-viewer {
+  display: flex;
+  flex: 1;
+  background: rebeccapurple;
+  height: 100%;
 }
 
-#hints {
-	grid-area: hints;
+.vertical-bar {
+  background: grey;
+  height: 100%;
+  width: 10px;
+  position: absolute;
+  left: calc(var(--vertical-bar) - 5px);
+  top: 0px;
 }
 
-
-
-
+.vertical-bar:hover {
+  cursor: col-resize;
+  background: black;
+}

@@ -1,95 +1,71 @@
-import { html } from '../libs/lit-html.js';
+// import { render } from "solid-js/web";
+// import html from "solid-js/html";
+// import { createSignal, onMount } from "solid-js";
 
-function downloads(name) {
+import { o, observable, html } from 'sinuous';
+
+
+// const [showTurtle, setShowTurtle] = createSignal(false);
+// const [showDimensions, setShowDimensions] = createSignal(false);
+// const [autorun, setAutorun] = createSignal(false);
+// const [draw, setDraw] = createSignal(false);
+// const [showGrid, setShowGrid] = createSignal(false);
+
+const showTurtle = o(false);
+const showDimensions = o(false);
+const autorun = o(false);
+const draw = o(false);
+const showGrid = o(false);
+
+export const View = () => { 
   return html`
-    <div id="downloads" class="menu-item">
-      download
-      <div class="button-menu">
-        <input class="menu-option name" type="text" placeholder=${name}></input>
-        <button id="downloadSVG" class="menu-option menu-item">SVG</button>
-        <button id="downloadTxt" class="menu-option menu-item">txt</button>
-        <button id="download-url" class="menu-option menu-item">URL</button>
+    <div class="menu-bar">
+      <div class="menu-item">run (shift + enter)</div>
+      <div class="menu-item dropdown-menu">
+        save
+        <div class="dropdown-menu-container">
+          <input class="name-input" type="text" placeholder="name_here" default?/>
+          <div class="menu-item">txt</div>
+          <div class="menu-item">svg</div>
+          <div class="menu-item">url</div>
+        </div>
       </div>
-    </div>
-  `
-}
-
-export function view({
-    svgCloth, 
-    hints, 
-    showTurtles,
-    showDimensions,
-    draw, 
-    autorun, 
-    consoleMessage,
-    content,
-    experimental,
-    grid,
-    name
-  }) {
-	return html`
-    <div id="code-editor"></div>
-    <div id="buttons">
-      <div id="run" class="menu-item">run (Shift + Enter)</div>
-      <div id="center" class="menu-item">view</div>
-      ${downloads(name)}
-      <div id="options" class="menu-item">
-        options
-        <div class="button-menu">
-          <div id="show-turtles" class="menu-option checkbox">
-            <span>
-              <div class="fillbox ${showTurtles ? "filled" : ""}"></div>
-              <span>show turtle</span>
-            </span>
+      <div class="menu-item">center view</div>
+      <div class="menu-item dropdown-menu">
+        view options
+        <div class="dropdown-menu-container">
+          <div class="menu-item checkbox">
+            <div class="check"></div>
+            <div class="checkbox-text">show turtle</div>
           </div>
-          <div id="show-dimensions" class="menu-option checkbox">
-            <span>
-              <div class="fillbox ${showDimensions ? "filled" : ""}"></div>
-              <span>dimensions</span>
-            </span>
+          <div class="menu-item checkbox" onclick=${() => { showDimensions(!showDimensions()); console.log("hello", showDimensions, showDimensions())}}>  
+            <div class="check"></div>
+            <div class="checkbox-text">dimensions ${showDimensions}</div>
           </div>
-          <div id="autorun" class="menu-option checkbox">
-            <span>
-              <div class="fillbox ${autorun ? "filled" : ""}"></div>
-              <span>autorun</span>
-            </span>
+          <div class="menu-item checkbox">
+            <div class="check"></div>
+            <div class="checkbox-text">autorun</div>
           </div>
-          <div id="hints" class="menu-option checkbox">
-            <span>
-              <div class="fillbox ${hints ? "filled" : ""}"></div>
-              <span>hints</span>
-            </span>
+          <div class="menu-item checkbox">
+            <div class="check"></div>
+            <div class="checkbox-text">hints</div>
           </div>
-          <div id="draw" class="menu-option checkbox">
-            <span>
-              <div class="fillbox ${draw ? "filled" : ""}"></div>
-              <span>draw</span>
-            </span>
+          <div class="menu-item checkbox">
+            <div class="check"></div>
+            <div class="checkbox-text">draw</div>
           </div>
-          <div id="grid" class="menu-option checkbox">
-            <span>
-              <div class="fillbox ${grid ? "filled" : ""}"></div>
-              <span>grid</span>
-            </span>
-          </div>
-          <div id="experimental" class="menu-option checkbox">
-            <span>
-              <div class="fillbox ${experimental ? "filled" : ""}"></div>
-              <span>experimental</span>
-            </span>
+          <div class="menu-item checkbox">
+            <div class="check"></div>
+            <div class="checkbox-text">grid</div>
           </div>
         </div>
       </div>
     </div>
-    <div id="vertical-bar"></div>
-    <div id="viewer">
-      ${svgCloth.draw(content)}
-      <div class="
-        console 
-        ${consoleMessage.error ? "console-erred" : ""} 
-        ${consoleMessage.value !== "" ? "console-show" : ""}">
-        ${consoleMessage.value}
-      </div>    
+    <div class="main-container">
+      <div class="code-editor"></div>
+      <div class="svg-viewer"></div>
+      <div class="vertical-bar"></div>
     </div>
-	`
-};
+  `
+
+}
