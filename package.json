@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "codemirror": "^6.0.1",
+    "lezer": "^0.13.5",
+    "lezer-generator": "^0.13.4",
     "sinuous": "^0.29.0",
     "solid-js": "^1.5.4"
   },

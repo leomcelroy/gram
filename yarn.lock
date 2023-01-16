@@ -709,6 +709,25 @@ json5@^2.2.1:
   resolved "https://registry.yarnpkg.com/json5/-/json5-2.2.1.tgz#655d50ed1e6f95ad1a3caababd2b0efda10b395c"
   integrity sha512-1hqLFMSrGHRHxav9q9gNjJ5EXznIxGVO09xQRrwplcS8qs28pZ8s8hupZAmqDwZUmVZ2Qb2jnyPOWcDH8m8dlA==
 
+lezer-generator@^0.13.4:
+  version "0.13.4"
+  resolved "https://registry.yarnpkg.com/lezer-generator/-/lezer-generator-0.13.4.tgz#33604a758aff1652fa676c78f667f61b00468d03"
+  integrity sha512-pTWxEgw6U41jM/IwMbhPBPonrcQV5YYL3XoY4QPR7ibOjgo2RaF4wVrdabN1ILtBbGvtHZekTGyrbsqfKnMHMA==
+  dependencies:
+    lezer "^0.13.2"
+
+lezer-tree@^0.13.2:
+  version "0.13.2"
+  resolved "https://registry.yarnpkg.com/lezer-tree/-/lezer-tree-0.13.2.tgz#00f4671309b15c27b131f637e430ce2d4d5f7065"
+  integrity sha512-15ZxW8TxVNAOkHIo43Iouv4zbSkQQ5chQHBpwXcD2bBFz46RB4jYLEEww5l1V0xyIx9U2clSyyrLes+hAUFrGQ==
+
+lezer@^0.13.2, lezer@^0.13.5:
+  version "0.13.5"
+  resolved "https://registry.yarnpkg.com/lezer/-/lezer-0.13.5.tgz#6000536bca7e24a5bd62e8cb4feff28b37e7dd8f"
+  integrity sha512-cAiMQZGUo2BD8mpcz7Nv1TlKzWP7YIdIRrX41CiP5bk5t4GHxskOxWUx2iAOuHlz8dO+ivbuXr0J1bfHsWD+lQ==
+  dependencies:
+    lezer-tree "^0.13.2"
+
 merge-anything@^5.0.2:
   version "5.0.4"
   resolved "https://registry.yarnpkg.com/merge-anything/-/merge-anything-5.0.4.tgz#cabddb1e8e04ac2be67eba0662822fb6c2da6333"

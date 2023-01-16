@@ -1,41 +1,29 @@
-import { render } from "solid-js/web";
-// import html from "solid-js/html";
-import { createSignal, onMount } from "solid-js";
-
 import { parse } from "./parse-comb.js";
 import { parse as p } from "./parse.js";
 
 import { View } from "./view.js";
 
-import { o, observable, html } from 'sinuous';
+import { buildParser } from "lezer-generator";
 
-const [name2, setName2] = createSignal("leo");
+const Parser = buildParser(`
+@top _ { expression }
 
+expression { Name | Number | BinaryExpression }
 
-function MyComponent({ name }) {
-  const [ count, setCount ] = createSignal(0);
+BinaryExpression { "(" expression ("+" | "-") expression ")" }
 
-  const onClick = () => {
-    setCount(c => c+1);
-    setCount(count()+1);
-    console.log("clicked", count());
-
-    setName2("bob");
-  };
-
-  onMount(() => {
-    const thing = document.querySelector(".thing");
-    console.log(thing);
-  })
-
-  return html`<div class="thing" on:click=${onClick}>Hello ${name} and ${name2}, ${count}</div>`;
+@tokens {
+  Name { std.asciiLetter+ }
+  Number { std.digit+ }
 }
+`)
 
-// render(() => html`<${MyComponent} name="leo"/>`, document.querySelector("#root"));
+console.log(Parser.parse('(a+1)'));
 
-// render(() => html`<${View}/>`, document.querySelector("#root"));
 
-document.querySelector("#root").append(html`<${View}/>`);
+const root = document.querySelector("#root");
+
+root.append(View());
 
 const test = `
 width = 5
