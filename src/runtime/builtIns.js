@@ -25,7 +25,7 @@ let builtIns = {
     arity: 0,
     value(env) {
       const turtle = env.turtle();
-      return turtle.move(turtle.cc, {x: 0, y: 0} );
+      return turtle.translate({x: 0, y: 0}, turtle.cc);
     }
   },
   copypaste: {
@@ -123,7 +123,7 @@ let builtIns = {
   rotate: {
     arity: 2,
     value(point, angle, env) {
-      return env.turtle().rotate(point, angle)
+      return env.turtle().rotate(angle, point)
     }
   },
   translate: {
@@ -252,7 +252,7 @@ let builtIns = {
           .forward(height)
           .right(90)
           .repeat(1)
-        turtle.move(turtle.cc, {x: 0, y: 0} );
+        turtle.translate({x: 0, y: 0}, turtle.cc);
       }
 
       return encloseInLayer(body, env);
