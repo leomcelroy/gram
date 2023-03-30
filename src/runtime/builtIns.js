@@ -141,7 +141,7 @@ let builtIns = {
   move: {
     arity: 2,
     value(draggedPoint, targetPoint, env) {
-      return env.turtle().move(draggedPoint, targetPoint)
+      return env.turtle().translate(targetPoint, draggedPoint)
     }
   },
   goto: {
@@ -200,7 +200,7 @@ let builtIns = {
       const body = () => {
         const turtle = env.turtle();
         turtle.arc(360, radius);
-        turtle.move(turtle.cc, {x: 0, y: 0} );
+        turtle.translate({x: 0, y: 0}, turtle.cc);
       }
 
       return encloseInLayer(body, env);

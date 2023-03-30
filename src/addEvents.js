@@ -254,6 +254,10 @@ For reliable saving download txt.` };
       event.preventDefault();
       dispatch("RUN");
     }
+
+    // cache
+    const rawCode = state.codemirror.getValue();
+    localStorage.setItem("gram-cache", rawCode);
   });
 
   document.addEventListener("keyup", function(event) {
@@ -426,8 +430,5 @@ For reliable saving download txt.` };
 
   addImgPanZoom(body);
 
-  window.onbeforeunload = function() {
-      return "Are you sure? You will lose work you haven't downloaded.";
-  };
 }
 

@@ -108,6 +108,9 @@ const ACTIONS = {
             dispatch("RUN", { first: true });
           })
         );
+    } else {
+      const saved = localStorage.getItem("gram-cache");
+      if (saved) state.codemirror.setValue(saved);
     }
 
     dispatch("RUN", { first: true });
