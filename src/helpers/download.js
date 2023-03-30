@@ -1,4 +1,4 @@
-import { drawTurtle, Turtle } from '../../myLibs/gram_js.js';
+import { drawTurtle, Turtle } from '../../myLibs/gram-js.js';
 import { render } from '../../libs/lit-html.js';
 import { minsMaxes } from "./minsMaxes.js";
 

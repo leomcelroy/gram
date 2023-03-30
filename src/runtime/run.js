@@ -1,7 +1,7 @@
 import { parse } from "./parse.js";
 import { Environment } from "./environment.js";
 import { builtIns } from "./builtIns.js";
-import { Turtle } from "../../myLibs/gram_js.js";
+import { Turtle } from "../../myLibs/gram-js.js";
 
 // should validate these as nums
 const add = (x, y) => {
@@ -105,26 +105,21 @@ function callFunc(value, env, ast, startLine) {
   const params = value.params || getParamNames(value.value);
   let args = [];
 
-  // for (let i = 0; i < arity; i++) {
-  //   if (ast.eof()) break;
-  //   if (ast.peek().loc.line === startLine) args.push(ast.next());
-  // }
-
-  while (true) {
-    if (ast.eof() || ast.peek().loc.line !== startLine) break;
-    args.push(ast.next());
+  for (let i = 0; i < arity; i++) {
+    if (ast.eof()) break;
+    if (ast.peek().loc.line === startLine) args.push(ast.next());
   }
 
-  args = args.map(a => evaluate(a, env, ast, true));
+  args = args.map(a => evaluate(a, env, ast));
 
-  if (args.length < arity) throw(`On line ${startLine}. Expected at least ${arity} arguments but received ${args.length}.`);
+  if (args.length < arity) throw `Error on line ${startLine}. Expected ${arity} arguments but received ${args.length}.`;
 
 
   let result;
 
   if (value.builtIn || isFunction(value.value)) {  
 
-    result = value.value(...args)(env);
+    result = value.value(...args, env);
     // if (result && result.type === "function") { result.env = env; }
 
   } else {
@@ -195,7 +190,7 @@ function pipe(node, env, ast) {
   return evaluate(value, env);
 }
 
-function access(left, right, node, env, ast, hold) {
+function access(left, right, node, env, ast) {
   let val;
   if ( Array.isArray(right) ) {
     if (right.length === 2) val = left.slice(right[0], right[1]);
@@ -205,7 +200,7 @@ function access(left, right, node, env, ast, hold) {
     val = left[right];
   }
 
-  return (val && val.type === "function" && !hold)
+  return (val && val.type === "function")
     ? callFunc(val, env, ast, node.loc.line)
     : val;
 }
@@ -220,7 +215,7 @@ const makeCanWrite = env => token => {
   return symbol;
 }
 
-let evaluate = (node, env, ast, hold = false) => {
+let evaluate = (node, env, ast = []) => {
   const literals = ["number", "string", "boolean"];
   if (Array.isArray(node)) return runProgram(new Stream(node), env);
   else if (node instanceof Stream) return runProgram(node, env); 
@@ -259,7 +254,7 @@ let evaluate = (node, env, ast, hold = false) => {
     else if (node.operator === "and") return left && right;
     else if (node.operator === "or") return left || right;
     else if (node.operator === "to") return range(left, right, left < right ? 1 : -1);
-    else if (node.operator === ".") return access(left, right, node, env, ast, hold);
+    else if (node.operator === ".") return access(left, right, node, env, ast);
 
   } else if (node.type === "unary") {
     const arg = evaluate(node.arg, env, ast);
@@ -296,7 +291,7 @@ let evaluate = (node, env, ast, hold = false) => {
       if (result instanceof Turtle) env.newTurtle(result);
       return result;
     } else if (value.type === "function") {
-      return hold ? value : callFunc(value, env, ast, node.loc.line);
+      return callFunc(value, env, ast, node.loc.line);
     } else { // not function
       return value;
     }
@@ -334,11 +329,11 @@ const runProgram = (ast, env) => {
   return last;
 }
 
-const loggingEvaluate = (line, col, oldEvaluate) => (node, env, ast, hold = false) => {
+const loggingEvaluate = (line, col, oldEvaluate) => (node, env, ast) => {
   const show = node.type === "symbol" && line + 1 === node.loc.line && col === node.loc.col;
   if (show) env.logLineTurtleBefore = env.turtle().copy();
 
-  const result = oldEvaluate(node, env, ast, hold);
+  const result = oldEvaluate(node, env, ast);
   // if (result === undefined) throw "Unexpected undefined. If accessing unknown property use: ?"; // TODO
 
   if (show) env.logLineTurtleAfter = env.show(""); // need to get this turtle into state so I can use it to render handle
