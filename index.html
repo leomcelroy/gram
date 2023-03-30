@@ -7,7 +7,7 @@
     <title>drawing</title>
     <!-- CodeMirror Import -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/codemirror.min.css"></link>
-    <link rel="stylesheet" href="https://codemirror.net/addon/hint/show-hint.css"></link>
+    <link rel="stylesheet" href="https://codemirror.net/5/addon/hint/show-hint.css"></link>
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/theme/monokai.min.css"> -->
     <script type="text/javascript" src="./libs/codemirror/codemirror.min.js"></script>
     <script type="text/javascript" src="./libs/codemirror/simple.js"></script>
@@ -16,6 +16,10 @@
     <script type="text/javascript" src="./libs/codemirror/comment.js"></script>
     <script type="text/javascript" src="./libs/codemirror/active-line.js"></script>
 
+    <script id="lzutf8" src="https://cdn.jsdelivr.net/npm/lzutf8/build/production/lzutf8.js"></script>
+
+    <script defer src="./src/index.js" type="module"></script>
+
     <!-- analytics -->
   </head>
   <body>
@@ -23,6 +27,5 @@
       You need to enable JavaScript to run this app.
     </noscript>
     <div id="root"></div>
-    <script src="./bundle.js" type="module"></script>
   </body>
 </html>

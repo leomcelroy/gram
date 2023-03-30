@@ -1,7 +1,7 @@
 import { render, svg } from '../libs/lit-html.js';
 
 import { view } from "./view.js";
-import { Turtle, drawTurtle } from "../myLibs/gram_js.js";
+import { Turtle, drawTurtle } from "../myLibs/gram-js.js";
 import { drawDirectEditHandle } from "./drawDirectEditHandle.js";
 
 const drawLine = ( [p0, p1] ) => svg`

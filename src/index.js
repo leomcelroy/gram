@@ -10,7 +10,6 @@ import { addEvents } from "./addEvents.js";
 
 import { svgCloth } from '../myLibs/svgCloth.js';
 
-import lzutf8 from 'https://cdn.skypack.dev/lzutf8';
 
 // -------------
 // --- STATE ---
