@@ -129,7 +129,7 @@ let builtIns = {
   translate: {
     arity: 2,
     value(x, y, env) {
-      return env.turtle().translate(x, y)
+      return env.turtle().translate({ x, y })
     }
   },
   scale: {
