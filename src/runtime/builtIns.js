@@ -135,7 +135,7 @@ let builtIns = {
   scale: {
     arity: 2,
     value(x, y, env) {
-      return env.turtle().scale(x, y)
+      return env.turtle().scale([x, y])
     }
   },
   move: {
