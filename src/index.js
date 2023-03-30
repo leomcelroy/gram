@@ -5,6 +5,93 @@ import { View } from "./view.js";
 
 import { buildParser } from "lezer-generator";
 
+import { init } from "./init.js";
+
+/*
+
+gram
+
+KEYWORDS = [
+  "if",
+  "elif",
+  "else", 
+  "for",
+  "skip",  
+  "break", 
+  "as", 
+  "def"
+]
+
+BINARY_OPERATORS = [
+  ["="], // assignment
+  [
+    "or", "and", 
+    "<", ">", "<=", ">=", 
+    "==", "!=", 
+    "+", "-", "*", "/", 
+    "%", "^"
+  ], // binary operators
+  [], // unary
+  ["."] // get
+]
+
+UNARY_OPERATORS = [
+  "!"
+]
+
+BOOLEAN = true | false
+
+ARRAY = [ ... ]
+
+BLOCK = { ... } 
+  | : INDENT
+
+CALL = (func ...args)
+ | func ...args newline
+
+// and (...) for precedence
+
+COMMENT = //
+
+SYMBOL = (_ | [a-z]) (_ | [a-z] | [0-9])*
+
+NUMBER = -? ( [0-9]+ | .[0-9]+ | [0-9]+.[0-9]+ )
+
+STRING = "..."
+
+? hash map, could just be function
+
+(dict 
+  "car" 6 
+  "house" (add 10 32)
+)
+
+==
+
+arr = [dict "car" 6 "house" (add 10 32)]
+
+(head arr) ...(tail arr)
+
+==
+
+tree = {dict "car" 6 "house" (add 10 32)}
+eval tree
+
+*/
+
+/* 
+
+REMOVING
+
+pipe |
+
+suppress?
+
+quote '
+
+apply @
+
+*/
 const Parser = buildParser(`
 @top _ { expression }
 
@@ -13,12 +100,14 @@ expression { Name | Number | BinaryExpression }
 BinaryExpression { "(" expression ("+" | "-") expression ")" }
 
 @tokens {
-  Name { std.asciiLetter+ }
+  Name { std.asciiLetter (std.digit | std.asciiLetter)* }
   Number { std.digit+ }
 }
 `)
 
-console.log(Parser.parse('(a+1)'));
+// console.log(Parser.parse('(a+1)'));
+
+// console.log(Parser);
 
 
 const root = document.querySelector("#root");
@@ -102,7 +191,49 @@ for 30 as i {
 
 `
 
-console.log(p(test));
+// console.log(p(test));
+const preprocess = string => `{${string}\n}`.trim();
+
+const program = `
+
+top = layer {
+  forward 90
+  right 30
+  forward 32
+}
+
+if a == 3 {
+  forward this.length
+  right this.(90)
+} elif a == 4 and true {
+  left 13
+} else {
+  right 43
+}
+
+
+for 10 {
+  forward 32
+}
+
+
+for 30 as i {
+  a = i
+  if a < 3 { 
+    skip 
+  } elif true {
+    3
+  } else {
+    4
+  }
+
+}
+
+
+
+`
+
+console.log("comb", parse(preprocess(program)));
 
 
 // const ast = parse(test);

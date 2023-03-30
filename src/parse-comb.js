@@ -1,69 +1,97 @@
 import { comb } from "./comb.js";
 
-const skip = ["ws", "comma"];
-const literals = ["[", "]", "{", "}", "(", ")"]
-  .reduce((acc, cur) => {
-    acc[cur] = cur;
+const skip = ["ws"];
+const literals = [
+  "[", 
+  "]", 
+  "{", 
+  "}", 
+  "(", 
+  ")", 
+  "def", 
+  "if",
+  "elif",
+  "else",
+  "for", 
+  "as",
+  // "skip",
+  // "break",
+  "true",
+  "false",
+];
 
-    return acc;
-  }, {});
+// what about patterns that match multiple tokens
+// need to add better error messages
+// how to handle literals?
+// postprocess functions
+
+/*
+operator precedence
+=
+binary
+unary
+.
+*/
 
 const tokenRules = {
-  ...literals,
-  word: /[a-zA-Z]+/,
-  number: /-?[0-9]+/,
+  bracket: ["[", "]", "{", "}", "(", ")"],
+  number: /-?\d+/,
+  string: /"(.*?)"/,
   ws: /[^\S\r\n]+/,
-  newline: /\n+/,
-  singleQuote: "'",
-  comma: ",",
-  // name: /[a-zA-Z0-9\/]+/,
-  // math: 
-  // other: /(?!\])/
+  newline: /\n/,
+  binary_op: ["+", "-", "*", "/", "!=", "==", "or", "and", "<=", ">=",  "<", ">", "%", "^"],
+  unary_op: ["!", "'", "~"],
+  assign: "=",
+  get_dot: ".",
+  word: /[a-zA-Z]+/,
 }
 
 const parse = comb`
-  lexer ${{rules: tokenRules, skip }}
+  lexer ${{rules: tokenRules, skip, literals }}
 
   number -> ${x => Number(x.value)}
   number = 'number'
 
-  word -> ${word => word.value}
   word = 'word'
 
-  exp = body | paren | list | word | number | 'newline'
+  string = 'string'
 
-  quote -> ${x => x[0] !== null ? ["quote", x[1]] : x[1]}
-  quote = 'singleQuote'? exp
+  number -> ${x => x.value === "true"}
+  boolean = 'true' | 'false'
 
-  list -> ${ x => ["arr", ...x[1].filter(x => x.type !== "newline")] }
-  list = '[' quote* ']'
+  cond = 'if' term block ('elif' term block)* ('else' block)?
 
-  paren -> ${ x => x[1].filter(x => x.type !== "newline") }
-  paren = '(' quote* ')'
+  func = 'def' word+ block
 
-  body -> ${x => {
-    const calls = [];
+  for = 'for' term ('as' word)? block
 
-    x[1].forEach(exp => {
-      if (exp.type === 'newline') calls.push([]);
-      // should only push if call, not quote or arr
-      else if (
-        Array.isArray(exp) && 
-        calls.length > 0 &&
-        calls.at(-1).length === 0
-        // && !["quote", "arr"].includes(exp.at(0))
-      ) calls.push(exp, []);
-      else if (calls.at(-1)) calls.at(-1).push(exp);
-      else calls.push([exp]);
-    })
+  unary = 'unary_op' exp
 
-    return ["quote", calls.filter( x => x.length > 0)];
-  }}
-  body = '{' quote* '}'
+  get = ( assign | cond | for | func | block | paren | list | word | boolean | string | number) 'get_dot' (word | string | paren)
 
-  body
+  assign = word 'assign' linecall
+
+  exp = get | assign | cond | for | func | unary | block | paren | list | word | boolean | string | number
+
+  binary = exp ('binary_op' exp)+
+
+  term = binary | exp
+
+  list -> ${([_0, list, _1]) => ["list", ...list.filter(x => x.type !== "newline")]}
+  list = '[' (term | 'newline')* ']'
+
+  paren -> ${([_0, list, _1]) => [...list.filter(x => x.type !== "newline")]}
+  paren = '(' (term | 'newline')* ')'
+
+  linecall -> ${([term, newline]) => [...term]}
+  linecall = term* 'newline'
+
+  block -> ${([_0, block, _1]) => ["block", ...block.filter(x => x.length !== 0)]}
+  block = '{' (linecall | term)* '}'
+
+  block
 `
 
-// body line could be implicit quote if only one item
+// block line could be implicit quote if only one item
 
 export { parse };

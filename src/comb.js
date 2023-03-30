@@ -4,7 +4,7 @@
 
 // token types that match skip are skipped
 // token values that match literals have the token type set to value
-const makeLexer = ({ rules = {}, skip = [] } = { }) => string => { 
+const makeLexer = ({ rules = {}, skip = [], literals = [] } = { }) => string => { 
   let index = 0;
 
   // let line = 0;
@@ -69,7 +69,8 @@ const makeLexer = ({ rules = {}, skip = [] } = { }) => string => {
 
       throw `Unknown character: ${peek()}\nAt index: ${index}\nLine: ${line}\nCol: ${col}`;
     }
-    // if (literals.includes(value)) type = value;
+
+    if (literals.includes(value)) type = value;
     if (!skip.includes(type)) tokens.push({ type, value, index });
     index += value.length;
 
