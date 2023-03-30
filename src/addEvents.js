@@ -6,8 +6,6 @@ import { minsMaxes } from "./helpers/minsMaxes.js";
 import { upload } from "./helpers/upload.js";
 import { download, downloadSVG } from "./helpers/download.js";
 
-import lzutf8 from 'https://cdn.skypack.dev/lzutf8';
-
 
 const getDistance = (p1, p2) => Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
 const getAngle = (p1, p2) => (180 / Math.PI) * Math.atan2(p2.y - p1.y, p2.x - p1.x);
