@@ -14,7 +14,7 @@ export function downloadSVG(filename, turtles, txt) {
     return acc;
   }, new Turtle());
 
-  const atOrigin = oneTurtle.move(oneTurtle.point("lt"), {x: margin, y: -margin});
+  const atOrigin = oneTurtle.translate({x: margin, y: -margin}, oneTurtle.point("lt"));
 
   // make svg
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
